@@ -1,0 +1,7 @@
+[
+  {"id":"strategy","name":"戦略編","description":"現在地とゴールの確認"},
+  {"id":"tactics","name":"戦術編","description":"販売プロセスの設計"},
+  {"id":"promotion","name":"宣伝編","description":"ブランディングとアプローチ"},
+  {"id":"experience","name":"体験編","description":"顧客体験と感情的価値"},
+  {"id":"philosophy","name":"哲学編","description":"伴走経営哲学"}
+]

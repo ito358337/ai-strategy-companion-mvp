@@ -1,0 +1,230 @@
+[
+  {
+    "id": "PHI-001",
+    "category": "philosophy",
+    "theme": "原点",
+    "subTheme": "志",
+    "importance": "high",
+    "level1": "あなたがこの事業を始めようと思った一番最初のきっかけは何でしたか？",
+    "level2": "その時に感じていた世の中への疑問や情熱はどのようなものでしたか？",
+    "level3": "その情熱は今のご自身の決断にどう影響を与えていますか？",
+    "aiSummary": "事業の原点となる「志（KNOW-WHY）」",
+    "framework": [
+      "KNOW-WHY"
+    ],
+    "pdfOutput": "knowWhy",
+    "nextQuestion": [
+      "PHI-002"
+    ],
+    "tags": [
+      "原点",
+      "情熱"
+    ],
+    "weight": 10
+  },
+  {
+    "id": "PHI-002",
+    "category": "philosophy",
+    "theme": "原動力",
+    "subTheme": "使命感",
+    "importance": "high",
+    "level1": "お金のためではないとしたら何があなたを仕事へと向かわせるのでしょうか？",
+    "level2": "お客様の喜ぶ顔などあなたが一番報酬だと感じるものは何ですか？",
+    "level3": "あなたが解決しなければならないという使命感はどこから来ますか？",
+    "aiSummary": "欲ではなく志を原動力とする「パーパス」",
+    "framework": [
+      "ビジョン・ミッション"
+    ],
+    "pdfOutput": "knowWhy",
+    "nextQuestion": [
+      "PHI-003"
+    ],
+    "tags": [
+      "使命感",
+      "パーパス"
+    ],
+    "weight": 10
+  },
+  {
+    "id": "PHI-003",
+    "category": "philosophy",
+    "theme": "絆徳経営",
+    "subTheme": "三方よし",
+    "importance": "high",
+    "level1": "会社の利益とお客様の利益、どちらを優先すべきだと考えていますか？",
+    "level2": "相手によいことをするからずっと一緒にいられるという考え方に共感しますか？",
+    "level3": "相手の幸せを心から願う姿勢が最大の利益を生むと信じられますか？",
+    "aiSummary": "道徳と合理性を融合した「絆徳経営」",
+    "framework": [
+      "絆徳経営"
+    ],
+    "pdfOutput": "philosophy",
+    "nextQuestion": [
+      "PHI-004"
+    ],
+    "tags": [
+      "利他",
+      "三方よし"
+    ],
+    "weight": 10
+  },
+  {
+    "id": "PHI-004",
+    "category": "philosophy",
+    "theme": "覚悟",
+    "subTheme": "リスクリバーサル",
+    "importance": "high",
+    "level1": "返金保証などを単なる売るためのテクニックだと思っていませんか？",
+    "level2": "迷惑をかけたら全責任を負うという強い覚悟はありますか？",
+    "level3": "その覚悟があって初めて真の信頼が完成すると信じられますか？",
+    "aiSummary": "売り手の強い「覚悟と責任感」",
+    "framework": [
+      "リスクリバーサル"
+    ],
+    "pdfOutput": "guarantee",
+    "nextQuestion": [
+      "PHI-005"
+    ],
+    "tags": [
+      "覚悟",
+      "責任"
+    ],
+    "weight": 10
+  },
+  {
+    "id": "PHI-005",
+    "category": "philosophy",
+    "theme": "思考",
+    "subTheme": "正しい努力",
+    "importance": "high",
+    "level1": "ノウハウばかり追い求めて疲れていませんか？",
+    "level2": "時代が変わっても絶対に変わらない商売の原理原則とは何だと思いますか？",
+    "level3": "お客様の悩みを解決し喜んでもらうという本質的な努力だけを積み上げる勇気はありますか？",
+    "aiSummary": "ノウハウに依存しない「原理原則の習得」",
+    "framework": [
+      "本質的思考"
+    ],
+    "pdfOutput": "philosophy",
+    "nextQuestion": [
+      "PHI-006"
+    ],
+    "tags": [
+      "原理原則",
+      "努力"
+    ],
+    "weight": 9
+  },
+  {
+    "id": "PHI-006",
+    "category": "philosophy",
+    "theme": "組織",
+    "subTheme": "ビジョン共有",
+    "importance": "high",
+    "level1": "あなたの頭の中にある最高の未来図を社員は自分の言葉で語れますか？",
+    "level2": "理念が毎日の業務の判断基準として生きていますか？",
+    "level3": "全員が同じ北極星を目指して進んでいるという実感はありますか？",
+    "aiSummary": "理念の浸透を図る「インターナルブランディング」",
+    "framework": [
+      "インナーブランディング"
+    ],
+    "pdfOutput": "philosophy",
+    "nextQuestion": [
+      "PHI-007"
+    ],
+    "tags": [
+      "組織",
+      "理念浸透"
+    ],
+    "weight": 8
+  },
+  {
+    "id": "PHI-007",
+    "category": "philosophy",
+    "theme": "社会意義",
+    "subTheme": "貢献",
+    "importance": "high",
+    "level1": "あなたのビジネスは社会のどんな痛みを和らげていますか？",
+    "level2": "ビジネスを通じて社会課題を解決するという視点を持つことで仕事の誇りはどう変わりますか？",
+    "level3": "その社会的な意義が優秀な人材やファンを惹きつける最大の魅力になりませんか？",
+    "aiSummary": "事業活動と社会貢献を統合する「CSV」",
+    "framework": [
+      "CSV経営"
+    ],
+    "pdfOutput": "mission",
+    "nextQuestion": [
+      "PHI-008"
+    ],
+    "tags": [
+      "社会貢献",
+      "CSV"
+    ],
+    "weight": 9
+  },
+  {
+    "id": "PHI-008",
+    "category": "philosophy",
+    "theme": "人生",
+    "subTheme": "幸福度",
+    "importance": "high",
+    "level1": "会社を経営することはあなたの人生の目的と重なっていますか？",
+    "level2": "仕事を言い訳にして家族との時間を犠牲にしていませんか？",
+    "level3": "あなた自身が心から幸せでなければ周りを幸せにすることはできないと思いませんか？",
+    "aiSummary": "経営者の「ワークライフ・インテグレーション」",
+    "framework": [
+      "ウェルビーイング"
+    ],
+    "pdfOutput": "knowWhy",
+    "nextQuestion": [
+      "PHI-009"
+    ],
+    "tags": [
+      "幸福",
+      "人生"
+    ],
+    "weight": 10
+  },
+  {
+    "id": "PHI-009",
+    "category": "philosophy",
+    "theme": "決断",
+    "subTheme": "判断基準",
+    "importance": "high",
+    "level1": "儲かるけれど少しお客様を騙すような仕事があったら断れますか？",
+    "level2": "迷った時に必ず立ち返るこれだけは絶対に守るという判断基準は何ですか？",
+    "level3": "その決断の連続があなたの会社の品格を作っていくと思いませんか？",
+    "aiSummary": "企業倫理に基づく「意思決定の基準」",
+    "framework": [
+      "コア・バリュー"
+    ],
+    "pdfOutput": "philosophy",
+    "nextQuestion": [
+      "PHI-010"
+    ],
+    "tags": [
+      "判断基準",
+      "倫理"
+    ],
+    "weight": 10
+  },
+  {
+    "id": "PHI-010",
+    "category": "philosophy",
+    "theme": "総括",
+    "subTheme": "出陣",
+    "importance": "high",
+    "level1": "すべての言語化の旅が終わった今どんな気持ちですか？",
+    "level2": "この売上最大化の戦略設計図が完成した今あなたの覚悟は決まりましたか？",
+    "level3": "さああなたを待っているお客様のもとへ向かいましょう。最初の一歩は何ですか？",
+    "aiSummary": "全プログラムの「総括と自己効力感の最大化」",
+    "framework": [
+      "アクションプラン"
+    ],
+    "pdfOutput": "action90",
+    "nextQuestion": [],
+    "tags": [
+      "総括",
+      "出陣"
+    ],
+    "weight": 10
+  }
+]
