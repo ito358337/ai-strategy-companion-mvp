@@ -303,6 +303,7 @@ h3 {
 }
 
 .deep-prompt,
+.deep-dive-panel,
 .summary-box {
   margin-top: 16px;
   padding: 14px;
@@ -316,9 +317,109 @@ h3 {
 }
 
 .deep-prompt p,
+.deep-dive-panel p,
 .summary-box p {
   margin: 6px 0 0;
   line-height: 1.7;
+}
+
+.deep-dive-panel {
+  display: grid;
+  gap: 14px;
+  border: 1px solid #c8dbe5;
+  background: #f7fbfd;
+}
+
+.deep-dive-panel.is-waiting {
+  grid-template-columns: 1fr auto;
+  align-items: center;
+}
+
+.deep-dive-panel.is-complete {
+  border-color: #b9dec9;
+  background: #f3fbf6;
+}
+
+.deep-dive-panel span,
+.deep-question span {
+  color: var(--muted);
+  font-size: 0.86rem;
+  font-weight: 800;
+}
+
+.deep-dive-head {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.deep-dive-head strong {
+  display: block;
+  margin-top: 4px;
+  font-size: 1.1rem;
+}
+
+.deep-dive-head em {
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+  padding: 0 10px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--accent-strong);
+  font-style: normal;
+  font-weight: 800;
+}
+
+.deep-dive-steps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.deep-step {
+  min-height: 34px;
+  padding: 0 10px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.deep-step.is-active {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+  font-weight: 800;
+}
+
+.deep-step.is-done {
+  border-color: #b9dec9;
+  background: var(--green-soft);
+  color: var(--green);
+  font-weight: 800;
+}
+
+.deep-question {
+  padding: 12px;
+  border-left: 4px solid var(--accent);
+  border-radius: 6px;
+  background: var(--surface);
+}
+
+.deep-question p {
+  color: var(--ink);
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.deep-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
 }
 
 .hint-grid {
@@ -329,6 +430,7 @@ h3 {
 }
 
 .hint-grid div,
+.question-summary,
 .summary-box {
   border: 1px solid var(--line);
   background: #fbfcfe;
@@ -423,6 +525,12 @@ h3 {
   .hint-grid {
     grid-template-columns: 1fr;
   }
+
+  .deep-dive-panel.is-waiting,
+  .deep-dive-head {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 480px) {
@@ -435,7 +543,8 @@ h3 {
   }
 
   .pager,
-  .pager-actions {
+  .pager-actions,
+  .deep-actions {
     align-items: stretch;
     flex-direction: column;
   }

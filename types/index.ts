@@ -41,10 +41,22 @@ export interface QuestionBank {
   chapters: QuestionBankChapter[];
 }
 
+export type DeepDiveType = "episode" | "emotion" | "reason" | "forWhom" | "oneWord";
+
+export interface DeepDiveAnswer {
+  type: DeepDiveType;
+  label: string;
+  question: string;
+  answer: string;
+}
+
 export interface AnswerDraft {
   questionId: string;
-  answerText: string;
-  aiDeepPrompt?: string;
+  basicAnswer: string;
+  deepDiveAnswers: DeepDiveAnswer[];
+  finalSummary: string;
+  pdfSentence: string;
+  completed: boolean;
   updatedAt: ISODateTime;
 }
 

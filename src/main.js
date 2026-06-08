@@ -7,11 +7,41 @@ const QUESTION_FILES = {
   philosophy: "./src/data/question-bank/philosophy.json",
 };
 
+const deepDiveTemplates = [
+  {
+    type: "episode",
+    label: "具体的な出来事",
+    question: "それを強く感じた、具体的な出来事や場面はありますか？",
+  },
+  {
+    type: "emotion",
+    label: "感情",
+    question: "その時、心の中ではどんな気持ちがありましたか？",
+  },
+  {
+    type: "reason",
+    label: "大切な理由",
+    question: "なぜ、それがあなたにとって大事だと感じるのでしょうか？",
+  },
+  {
+    type: "forWhom",
+    label: "誰のためか",
+    question: "その想いを、誰に一番届けたいですか？",
+  },
+  {
+    type: "oneWord",
+    label: "一言化",
+    question: "今のお話を一言で表すなら、どんな言葉になりますか？",
+  },
+];
+
 const app = document.querySelector("#app");
 
 let questionBank = null;
 let state = null;
 let saveTimer = null;
+let activeDeepDiveIndex = 0;
+const deepDiveStartedQuestions = new Set();
 
 async function loadJson(path) {
   const response = await fetch(path);
@@ -58,10 +88,66 @@ function loadSession() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return createSession();
-    return { ...createSession(), ...JSON.parse(raw) };
+    return normalizeSession({ ...createSession(), ...JSON.parse(raw) });
   } catch {
     return createSession();
   }
+}
+
+function normalizeSession(session) {
+  const normalizedAnswers = {};
+  for (const question of getAllQuestions()) {
+    if (session.answers?.[question.id]) {
+      normalizedAnswers[question.id] = normalizeAnswer(question.id, session.answers[question.id]);
+    }
+  }
+  return { ...session, answers: normalizedAnswers };
+}
+
+function createEmptyAnswer(questionId) {
+  return {
+    questionId,
+    basicAnswer: "",
+    deepDiveAnswers: deepDiveTemplates.map((template) => ({ ...template, answer: "" })),
+    finalSummary: "",
+    pdfSentence: "",
+    completed: false,
+    updatedAt: new Date().toISOString(),
+  };
+}
+
+function normalizeAnswer(questionId, answer) {
+  const base = createEmptyAnswer(questionId);
+  const deepDiveAnswers = deepDiveTemplates.map((template) => {
+    const existing = answer.deepDiveAnswers?.find((item) => item.type === template.type);
+    return {
+      ...template,
+      answer: existing?.answer ?? "",
+    };
+  });
+
+  return {
+    ...base,
+    ...answer,
+    questionId,
+    basicAnswer: answer.basicAnswer ?? answer.answerText ?? "",
+    deepDiveAnswers,
+    finalSummary: answer.finalSummary ?? "",
+    pdfSentence: answer.pdfSentence ?? "",
+    completed: Boolean(answer.completed ?? answer.finalSummary ?? answer.answerText),
+    updatedAt: answer.updatedAt ?? new Date().toISOString(),
+  };
+}
+
+function getAnswer(questionId) {
+  return normalizeAnswer(questionId, state.answers[questionId] ?? createEmptyAnswer(questionId));
+}
+
+function setAnswer(questionId, answer) {
+  state.answers[questionId] = normalizeAnswer(questionId, {
+    ...answer,
+    updatedAt: new Date().toISOString(),
+  });
 }
 
 function persistSession(feedback = true) {
@@ -105,7 +191,7 @@ function getQuestionPosition(questionId = state.currentQuestionId) {
 
 function getTotals() {
   const questions = getAllQuestions();
-  const answered = questions.filter((question) => state.answers[question.id]?.answerText?.trim());
+  const answered = questions.filter((question) => getAnswer(question.id).completed);
   return {
     total: questions.length,
     answered: answered.length,
@@ -114,7 +200,7 @@ function getTotals() {
 }
 
 function getChapterProgress(chapter) {
-  const answered = chapter.questions.filter((question) => state.answers[question.id]?.answerText?.trim());
+  const answered = chapter.questions.filter((question) => getAnswer(question.id).completed);
   return {
     total: chapter.questions.length,
     answered: answered.length,
@@ -125,6 +211,11 @@ function getChapterProgress(chapter) {
 function setCurrentQuestion(chapterId, questionId) {
   state.currentChapter = chapterId;
   state.currentQuestionId = questionId;
+  const answer = getAnswer(questionId);
+  activeDeepDiveIndex = getFirstOpenDeepDiveIndex(answer);
+  if (getAnsweredDeepDiveCount(answer) > 0 || answer.completed) {
+    deepDiveStartedQuestions.add(questionId);
+  }
   persistSession(false);
   render();
 }
@@ -148,34 +239,104 @@ function moveQuestion(direction) {
 
 function saveAnswer(value) {
   const question = getCurrentQuestion();
-  state.answers[question.id] = {
-    questionId: question.id,
-    answerText: value,
-    aiDeepPrompt: value.trim().length > 0 && value.trim().length <= 20 ? question.level2 : "",
-    updatedAt: new Date().toISOString(),
-  };
+  const answer = getAnswer(question.id);
+  setAnswer(question.id, {
+    ...answer,
+    basicAnswer: value,
+    finalSummary: "",
+    pdfSentence: "",
+    completed: false,
+  });
+  if (!value.trim()) {
+    deepDiveStartedQuestions.delete(question.id);
+  }
   scheduleSave();
-  updateDerivedUi(question);
+  updateDerivedUi();
+  const startButton = document.querySelector('[data-action="start-deep"]');
+  if (startButton) startButton.disabled = !value.trim();
 }
 
-function updateDerivedUi(question) {
-  const answer = state.answers[question.id];
-  const deepNode = document.querySelector("[data-deep-prompt]");
-  if (deepNode) {
-    deepNode.hidden = !answer?.aiDeepPrompt;
-    deepNode.querySelector("p").textContent = answer?.aiDeepPrompt ?? "";
-  }
+function saveDeepDiveAnswer(value) {
+  const question = getCurrentQuestion();
+  const answer = getAnswer(question.id);
+  deepDiveStartedQuestions.add(question.id);
+  answer.deepDiveAnswers[activeDeepDiveIndex].answer = value;
+  answer.finalSummary = "";
+  answer.pdfSentence = "";
+  answer.completed = false;
+  setAnswer(question.id, answer);
+  scheduleSave();
+  document.querySelectorAll('[data-action="start-deep"], [data-action="continue-deep"]').forEach((button) => {
+    button.disabled = !value.trim();
+  });
+}
 
+function updateDerivedUi() {
   const totals = getTotals();
   document.querySelector("[data-total-answered]").textContent = `${totals.answered}/${totals.total}`;
   document.querySelector("[data-progress-bar]").style.width = `${totals.percent}%`;
   document.querySelector("[data-progress-label]").textContent = `${totals.percent}%`;
 }
 
+function getAnsweredDeepDiveCount(answer) {
+  return answer.deepDiveAnswers.filter((item) => item.answer.trim()).length;
+}
+
+function getFirstOpenDeepDiveIndex(answer) {
+  const index = answer.deepDiveAnswers.findIndex((item) => !item.answer.trim());
+  return index === -1 ? deepDiveTemplates.length - 1 : index;
+}
+
+function beginDeepDive() {
+  const question = getCurrentQuestion();
+  const answer = getAnswer(question.id);
+  if (!answer.basicAnswer.trim()) return;
+  deepDiveStartedQuestions.add(question.id);
+  activeDeepDiveIndex = getFirstOpenDeepDiveIndex(answer);
+  render();
+}
+
+function continueDeepDive() {
+  const question = getCurrentQuestion();
+  const answer = getAnswer(question.id);
+  const current = answer.deepDiveAnswers[activeDeepDiveIndex];
+  if (!current?.answer.trim()) return;
+  activeDeepDiveIndex = Math.min(activeDeepDiveIndex + 1, deepDiveTemplates.length - 1);
+  render();
+}
+
+function summarizeAndMoveNext() {
+  const question = getCurrentQuestion();
+  const answer = getAnswer(question.id);
+  const summary = generateQuestionSummary(question, answer);
+  setAnswer(question.id, {
+    ...answer,
+    finalSummary: summary.finalSummary,
+    pdfSentence: summary.pdfSentence,
+    completed: true,
+  });
+  persistSession(true);
+  moveQuestion(1);
+}
+
+function generateQuestionSummary(question, answer) {
+  const oneWord = answer.deepDiveAnswers.find((item) => item.type === "oneWord")?.answer.trim();
+  const fallback = answer.basicAnswer.trim().split(/\s+/).slice(0, 24).join(" ");
+  const pdfSentence = oneWord || fallback || "未整理";
+  return {
+    pdfSentence,
+    finalSummary: [
+      `受け止め：「${pdfSentence}」という想いが見えてきました。`,
+      `整理：この回答は「${question.aiSummary}」として整理できます。`,
+      `PDFに残す一文：「${pdfSentence}」`,
+    ].join("\n"),
+  };
+}
+
 function generateChapterSummary(chapter) {
   const answered = chapter.questions
-    .map((question) => ({ question, answer: state.answers[question.id]?.answerText?.trim() }))
-    .filter((item) => item.answer);
+    .map((question) => ({ question, answer: getAnswer(question.id) }))
+    .filter((item) => item.answer.completed);
 
   if (answered.length === 0) return "";
 
@@ -204,10 +365,17 @@ function exportMarkdown() {
   for (const chapter of questionBank.chapters) {
     lines.push(`## ${chapter.category.name}`, "");
     for (const question of chapter.questions) {
-      const answer = state.answers[question.id]?.answerText?.trim() || "未回答";
-      lines.push(`### ${question.id} ${question.theme} / ${question.subTheme}`, "");
-      lines.push(`**Q.** ${question.level1}`, "");
-      lines.push(`**A.** ${answer}`, "");
+      const answer = getAnswer(question.id);
+      lines.push(`## 質問ID：${question.id}`, "");
+      lines.push("### 基本質問", question.level1, "");
+      lines.push("### 基本回答", answer.basicAnswer.trim() || "未回答", "");
+      lines.push("### 深掘り", "");
+      answer.deepDiveAnswers.forEach((item, index) => {
+        lines.push(`${index + 1}. ${item.label}`);
+        lines.push(`質問：${item.question}`);
+        lines.push(`回答：${item.answer.trim() || "未回答"}`, "");
+      });
+      lines.push("### PDFに残す一文", answer.pdfSentence.trim() || "未整理", "");
     }
     if (state.summaries[chapter.category.id]) {
       lines.push(`**章まとめ:** ${state.summaries[chapter.category.id]}`, "");
@@ -264,7 +432,7 @@ function renderQuestionDots(chapter) {
   return chapter.questions
     .map((question, index) => {
       const active = question.id === state.currentQuestionId;
-      const answered = Boolean(state.answers[question.id]?.answerText?.trim());
+      const answered = getAnswer(question.id).completed;
       return `
         <button class="question-dot ${active ? "is-active" : ""} ${answered ? "is-answered" : ""}" data-action="question" data-question-id="${question.id}" aria-label="${question.id}">
           ${index + 1}
@@ -285,20 +453,142 @@ function renderSummary(chapter) {
   `;
 }
 
+function renderQuestionSummary(answer) {
+  if (!answer.finalSummary) return "";
+  const paragraphs = answer.finalSummary
+    .split("\n")
+    .map((line) => `<p>${escapeHtml(line)}</p>`)
+    .join("");
+  return `
+    <section class="summary-box question-summary">
+      <span>この問いの整理</span>
+      ${paragraphs}
+    </section>
+  `;
+}
+
+function renderDeepDivePanel(answer) {
+  const basicDone = Boolean(answer.basicAnswer.trim());
+  const answeredCount = getAnsweredDeepDiveCount(answer);
+  const activeItem = answer.deepDiveAnswers[activeDeepDiveIndex];
+  const currentAnswered = Boolean(activeItem?.answer.trim());
+  const allDeepDone = answeredCount === deepDiveTemplates.length;
+  const hasStarted = deepDiveStartedQuestions.has(answer.questionId) || answeredCount > 0;
+
+  if (!basicDone) {
+    return `
+      <section class="deep-dive-panel is-waiting">
+        <div>
+          <span>深掘り対話</span>
+          <strong>まずは基本回答を書いてください</strong>
+          <p>回答後に、原体験や本音を引き出す5段階の深掘りへ進めます。</p>
+        </div>
+        <div class="deep-actions">
+          <button class="primary-button" data-action="start-deep" disabled>深掘りへ進む</button>
+        </div>
+      </section>
+    `;
+  }
+
+  if (!hasStarted) {
+    return `
+      <section class="deep-dive-panel">
+        <div class="deep-dive-head">
+          <div>
+            <span>深掘り 0 / ${deepDiveTemplates.length}</span>
+            <strong>回答をもう一段深めます</strong>
+          </div>
+          <em>準備完了</em>
+        </div>
+        <div class="deep-question">
+          <span>次にやること</span>
+          <p>基本回答をもとに、具体的な出来事、感情、大切な理由、誰に届けたいか、一言化まで順番に整理します。</p>
+        </div>
+        <div class="deep-actions">
+          <button class="primary-button" data-action="start-deep">深掘りへ進む</button>
+        </div>
+      </section>
+    `;
+  }
+
+  if (answer.completed) {
+    return `
+      <section class="deep-dive-panel is-complete">
+        <div class="deep-dive-head">
+          <span>深掘り完了</span>
+          <strong>この問いは整理済みです</strong>
+        </div>
+        <div class="deep-dive-steps">
+          ${answer.deepDiveAnswers
+            .map((item, index) => `<button class="deep-step is-done" data-action="select-deep" data-deep-index="${index}">${index + 1}. ${escapeHtml(item.label)}</button>`)
+            .join("")}
+        </div>
+      </section>
+      ${renderQuestionSummary(answer)}
+    `;
+  }
+
+  return `
+    <section class="deep-dive-panel">
+      <div class="deep-dive-head">
+        <div>
+          <span>深掘り ${Math.max(answeredCount, activeDeepDiveIndex)} / ${deepDiveTemplates.length}</span>
+          <strong>${escapeHtml(activeItem.label)}</strong>
+        </div>
+        <em>${activeDeepDiveIndex + 1} / ${deepDiveTemplates.length}</em>
+      </div>
+
+      <div class="deep-dive-steps" aria-label="深掘り進捗">
+        ${answer.deepDiveAnswers
+          .map((item, index) => {
+            const stateClass = index === activeDeepDiveIndex ? "is-active" : item.answer.trim() ? "is-done" : "";
+            return `<button class="deep-step ${stateClass}" data-action="select-deep" data-deep-index="${index}">${index + 1}. ${escapeHtml(item.label)}</button>`;
+          })
+          .join("")}
+      </div>
+
+      <div class="deep-question">
+        <span>深掘り質問</span>
+        <p>${escapeHtml(activeItem.question)}</p>
+      </div>
+
+      <label class="answer-field">
+        <span>追加回答</span>
+        <textarea data-deep-answer placeholder="その場面や気持ちを、短くてもいいので書いてください。">${escapeHtml(activeItem.answer)}</textarea>
+      </label>
+
+      <div class="deep-actions">
+        ${
+          answeredCount === 0 && activeDeepDiveIndex === 0
+            ? `<button class="primary-button" data-action="start-deep" ${currentAnswered ? "" : "disabled"}>深掘りへ進む</button>`
+            : ""
+        }
+        ${
+          !allDeepDone && !(answeredCount === 0 && activeDeepDiveIndex === 0)
+            ? `<button class="primary-button" data-action="continue-deep" ${currentAnswered ? "" : "disabled"}>さらに深掘りする</button>`
+            : ""
+        }
+        <button class="secondary-button" data-action="summarize-question" ${answer.basicAnswer.trim() ? "" : "disabled"}>この問いを整理して次へ進む</button>
+      </div>
+    </section>
+  `;
+}
+
 function render() {
   const chapter = getCurrentChapter();
   const question = getCurrentQuestion();
-  const answer = state.answers[question.id];
+  const answer = getAnswer(question.id);
   const totals = getTotals();
   const position = getQuestionPosition();
   const chapterProgress = getChapterProgress(chapter);
   const canCompleteChapter = chapterProgress.answered === chapterProgress.total;
+  const canMoveNext = answer.completed;
 
   app.innerHTML = `
     <main class="shell">
       <header class="topbar">
         <div>
-          <p class="eyebrow">${escapeHtml(questionBank.version)} / ${totals.total} questions</p>
+          <p class="eyebrow">v0.2 / ${escapeHtml(questionBank.version)} / ${totals.total} questions</p>
           <h1>${escapeHtml(questionBank.title)}</h1>
           <p class="lead">経営者の想い、強み、課題を一問一答で言語化します。</p>
         </div>
@@ -351,14 +641,11 @@ function render() {
             </div>
             <h3>${escapeHtml(question.level1)}</h3>
             <label class="answer-field">
-              <span>回答</span>
-              <textarea data-answer placeholder="今の考えをそのまま書いてください。短くても大丈夫です。">${escapeHtml(answer?.answerText ?? "")}</textarea>
+              <span>基本回答</span>
+              <textarea data-answer placeholder="今の考えをそのまま書いてください。短くても大丈夫です。">${escapeHtml(answer.basicAnswer)}</textarea>
             </label>
 
-            <aside class="deep-prompt" data-deep-prompt ${answer?.aiDeepPrompt ? "" : "hidden"}>
-              <strong>深掘りの問い</strong>
-              <p>${escapeHtml(answer?.aiDeepPrompt ?? "")}</p>
-            </aside>
+            ${renderDeepDivePanel(answer)}
 
             <div class="hint-grid">
               <div>
@@ -379,7 +666,7 @@ function render() {
             <span>${position.questionIndex + 1} / ${chapter.questions.length}</span>
             <div class="pager-actions">
               <button class="secondary-button" data-action="complete-chapter" ${canCompleteChapter ? "" : "disabled"}>章まとめ</button>
-              <button class="primary-button" data-action="next">次へ</button>
+              <button class="secondary-button" data-action="next" ${canMoveNext ? "" : "disabled"}>${canMoveNext ? "次へ" : "整理後に次へ"}</button>
             </div>
           </footer>
         </section>
@@ -391,6 +678,9 @@ function render() {
 app.addEventListener("input", (event) => {
   if (event.target.matches("[data-answer]")) {
     saveAnswer(event.target.value);
+  }
+  if (event.target.matches("[data-deep-answer]")) {
+    saveDeepDiveAnswer(event.target.value);
   }
 });
 
@@ -404,6 +694,13 @@ app.addEventListener("click", (event) => {
     setCurrentQuestion(chapter.category.id, chapter.questions[0].id);
   }
   if (action === "question") setCurrentQuestion(state.currentChapter, target.dataset.questionId);
+  if (action === "select-deep") {
+    activeDeepDiveIndex = Number(target.dataset.deepIndex);
+    render();
+  }
+  if (action === "start-deep") beginDeepDive();
+  if (action === "continue-deep") continueDeepDive();
+  if (action === "summarize-question") summarizeAndMoveNext();
   if (action === "prev") moveQuestion(-1);
   if (action === "next") moveQuestion(1);
   if (action === "complete-chapter") completeChapter();
