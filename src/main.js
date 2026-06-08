@@ -1,4 +1,6 @@
 const STORAGE_KEY = "ai-strategy-companion:mvp-light:session";
+const RECORDING_DB_NAME = "ai-strategy-companion-recordings";
+const RECORDING_STORE_NAME = "voice-recordings";
 const QUESTION_FILES = {
   strategy: "./src/data/question-bank/strategy.json",
   tactics: "./src/data/question-bank/tactics.json",
@@ -46,6 +48,14 @@ let speechRecognition = null;
 let activeVoiceTextarea = null;
 let isVoiceListening = false;
 let lastVoiceError = false;
+let shouldKeepVoiceListening = false;
+let pendingInterimText = "";
+let restartVoiceTimer = null;
+let mediaRecorder = null;
+let voiceStream = null;
+let voiceRecordingChunks = [];
+let activeVoiceTarget = "basic";
+let activeVoiceQuestionId = "";
 
 async function loadJson(path) {
   const response = await fetch(path);
@@ -183,6 +193,98 @@ function isSpeechRecognitionSupported() {
   return Boolean(getSpeechRecognitionConstructor());
 }
 
+function isVoiceSessionActive() {
+  return shouldKeepVoiceListening || isVoiceListening;
+}
+
+function isMediaRecorderSupported() {
+  return Boolean(navigator.mediaDevices?.getUserMedia && window.MediaRecorder);
+}
+
+function openRecordingDb() {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open(RECORDING_DB_NAME, 1);
+    request.onupgradeneeded = () => {
+      const db = request.result;
+      if (!db.objectStoreNames.contains(RECORDING_STORE_NAME)) {
+        db.createObjectStore(RECORDING_STORE_NAME, { keyPath: "id" });
+      }
+    };
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+}
+
+async function saveVoiceRecording(blob) {
+  const questionId = activeVoiceQuestionId || getCurrentQuestion().id;
+  const recording = {
+    id: `${questionId}:${activeVoiceTarget}:${Date.now()}`,
+    questionId,
+    target: activeVoiceTarget,
+    blob,
+    mimeType: blob.type,
+    createdAt: new Date().toISOString(),
+  };
+
+  const db = await openRecordingDb();
+  await new Promise((resolve, reject) => {
+    const transaction = db.transaction(RECORDING_STORE_NAME, "readwrite");
+    transaction.objectStore(RECORDING_STORE_NAME).put(recording);
+    transaction.oncomplete = () => resolve();
+    transaction.onerror = () => reject(transaction.error);
+  });
+  db.close();
+  return recording;
+}
+
+async function startVoiceRecording() {
+  if (!isMediaRecorderSupported()) {
+    showRecordingStatus("このブラウザでは録音バックアップを保存できません。文字起こしのみ行います。", "error");
+    return;
+  }
+
+  if (mediaRecorder?.state === "recording") return;
+
+  voiceStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  voiceRecordingChunks = [];
+  mediaRecorder = new MediaRecorder(voiceStream);
+
+  mediaRecorder.ondataavailable = (event) => {
+    if (event.data.size > 0) voiceRecordingChunks.push(event.data);
+  };
+
+  mediaRecorder.onstop = async () => {
+    const blob = new Blob(voiceRecordingChunks, { type: mediaRecorder.mimeType || "audio/webm" });
+    voiceRecordingChunks = [];
+    stopVoiceTracks();
+
+    if (!blob.size) return;
+
+    try {
+      const recording = await saveVoiceRecording(blob);
+      showRecordingStatus("録音バックアップを保存しました。文字起こし漏れがある場合は音声を確認できます。", "done", recording, blob);
+    } catch {
+      showRecordingStatus("録音は完了しましたが、このブラウザでは保存できませんでした。", "error", null, blob);
+    }
+  };
+
+  mediaRecorder.start(1000);
+  showRecordingStatus("録音バックアップ中です。音声そのものも一時保存しています。", "listening");
+}
+
+function stopVoiceRecording() {
+  if (mediaRecorder?.state === "recording") {
+    mediaRecorder.stop();
+    return;
+  }
+  stopVoiceTracks();
+}
+
+function stopVoiceTracks() {
+  voiceStream?.getTracks().forEach((track) => track.stop());
+  voiceStream = null;
+}
+
 function initSpeechRecognition() {
   if (!isSpeechRecognitionSupported()) return null;
   if (speechRecognition) return speechRecognition;
@@ -191,12 +293,13 @@ function initSpeechRecognition() {
   const recognition = new SpeechRecognition();
   recognition.lang = "ja-JP";
   recognition.interimResults = true;
-  recognition.continuous = false;
+  recognition.continuous = true;
 
   recognition.onstart = () => {
     isVoiceListening = true;
     lastVoiceError = false;
-    showVoiceStatus("聞き取り中です。思いつくまま話してください。", "listening");
+    pendingInterimText = "";
+    showVoiceStatus("聞き取り中です。少し間が空いても、そのまま話し続けてください。", "listening");
     updateVoiceButtons();
   };
 
@@ -213,8 +316,15 @@ function initSpeechRecognition() {
       }
     }
 
-    if (finalText) appendRecognizedText(finalText);
-    if (interimText) showVoiceStatus(`認識中：${interimText}`, "listening");
+    if (finalText) {
+      appendRecognizedText(finalText);
+      pendingInterimText = "";
+    }
+
+    if (interimText) {
+      pendingInterimText = interimText;
+      showVoiceStatus(`認識中：${interimText}`, "listening");
+    }
   };
 
   recognition.onerror = (event) => {
@@ -223,7 +333,16 @@ function initSpeechRecognition() {
 
   recognition.onend = () => {
     isVoiceListening = false;
+    flushPendingInterimText();
     updateVoiceButtons();
+    if (shouldKeepVoiceListening && !lastVoiceError) {
+      showVoiceStatus("聞き取りが一瞬途切れました。自動で再開します。", "listening");
+      restartVoiceTimer = setTimeout(() => {
+        restartVoiceRecognition();
+      }, 250);
+      return;
+    }
+
     if (activeVoiceTextarea && !lastVoiceError) {
       showVoiceStatus("文字起こししました。必要に応じて少し整えてください。", "done");
     }
@@ -233,27 +352,50 @@ function initSpeechRecognition() {
   return speechRecognition;
 }
 
-function startVoiceInput(targetTextarea) {
+async function startVoiceInput(targetTextarea, target = "basic") {
   if (!isSpeechRecognitionSupported()) {
     showVoiceStatus("このブラウザは音声入力に対応していません。Google Chromeでお試しください。", "error");
     return;
   }
 
+  activeVoiceTarget = target;
+  activeVoiceQuestionId = getCurrentQuestion().id;
   activeVoiceTextarea = targetTextarea ?? document.activeElement;
   if (!activeVoiceTextarea?.matches("textarea")) {
     activeVoiceTextarea = document.querySelector("[data-answer]");
   }
 
-  if (isVoiceListening) stopVoiceInput();
+  clearTimeout(restartVoiceTimer);
+  shouldKeepVoiceListening = true;
+  pendingInterimText = "";
+  if (isVoiceListening) stopVoiceInput(false);
 
   try {
+    await startVoiceRecording();
     initSpeechRecognition().start();
   } catch {
-    showVoiceStatus("音声入力を開始できませんでした。少し待ってからもう一度お試しください。", "error");
+    stopVoiceRecording();
+    shouldKeepVoiceListening = false;
+    handleVoiceError("not-allowed");
   }
 }
 
-function stopVoiceInput() {
+function restartVoiceRecognition() {
+  if (!shouldKeepVoiceListening || lastVoiceError || !speechRecognition) return;
+  try {
+    speechRecognition.start();
+  } catch {
+    restartVoiceTimer = setTimeout(() => {
+      restartVoiceRecognition();
+    }, 500);
+  }
+}
+
+function stopVoiceInput(manual = true) {
+  clearTimeout(restartVoiceTimer);
+  if (manual) shouldKeepVoiceListening = false;
+  flushPendingInterimText();
+  if (manual) stopVoiceRecording();
   if (!speechRecognition || !isVoiceListening) return;
   speechRecognition.stop();
 }
@@ -268,6 +410,12 @@ function appendRecognizedText(text) {
   activeVoiceTextarea.dispatchEvent(new Event("input", { bubbles: true }));
 }
 
+function flushPendingInterimText() {
+  if (!pendingInterimText.trim()) return;
+  appendRecognizedText(pendingInterimText);
+  pendingInterimText = "";
+}
+
 function showVoiceStatus(message, type = "info") {
   document.querySelectorAll("[data-voice-message]").forEach((node) => {
     node.textContent = message;
@@ -275,9 +423,38 @@ function showVoiceStatus(message, type = "info") {
   });
 }
 
+function showRecordingStatus(message, type = "info", recording = null, blob = null) {
+  document.querySelectorAll("[data-recording-message]").forEach((node) => {
+    node.textContent = message;
+    node.dataset.voiceState = type;
+  });
+
+  if (!blob) return;
+
+  const audioUrl = URL.createObjectURL(blob);
+  document.querySelectorAll(`[data-voice-target="${activeVoiceTarget}"] [data-recording-actions]`).forEach((node) => {
+    node.innerHTML = `
+      <audio controls src="${audioUrl}"></audio>
+      <a href="${audioUrl}" download="${recording?.questionId ?? "voice"}-${recording?.target ?? "answer"}.webm">録音を保存</a>
+    `;
+  });
+}
+
 function handleVoiceError(error) {
+  if (error === "no-speech" && shouldKeepVoiceListening) {
+    lastVoiceError = false;
+    showVoiceStatus("少し無音がありました。聞き取りを続けます。", "listening");
+    return;
+  }
+
+  if (error === "aborted" && !shouldKeepVoiceListening) {
+    return;
+  }
+
   isVoiceListening = false;
+  shouldKeepVoiceListening = false;
   lastVoiceError = true;
+  clearTimeout(restartVoiceTimer);
   updateVoiceButtons();
 
   if (error === "not-allowed" || error === "service-not-allowed") {
@@ -290,8 +467,8 @@ function handleVoiceError(error) {
 
 function updateVoiceButtons() {
   document.querySelectorAll("[data-action='voice-toggle']").forEach((button) => {
-    button.textContent = isVoiceListening ? "⏹ 停止" : "🎙 話して答える";
-    button.classList.toggle("is-listening", isVoiceListening);
+    button.textContent = isVoiceSessionActive() ? "⏹ 停止" : "🎙 話して答える";
+    button.classList.toggle("is-listening", isVoiceSessionActive());
   });
 }
 
@@ -597,6 +774,7 @@ function renderQuestionSummary(answer) {
 
 function renderVoiceInputControls(target) {
   const supported = isSpeechRecognitionSupported();
+  const recordingSupported = isMediaRecorderSupported();
   return `
     <div class="voice-input" data-voice-target="${target}">
       <button class="voice-button" data-action="voice-toggle" data-voice-for="${target}" ${supported ? "" : "disabled"}>
@@ -606,7 +784,11 @@ function renderVoiceInputControls(target) {
         <p data-voice-message data-voice-state="${supported ? "info" : "error"}">
           ${supported ? "音声入力はGoogle Chromeでの利用を推奨しています。" : "このブラウザは音声入力に対応していません。Google Chromeでお試しください。"}
         </p>
-        <small>話した内容は文字として入力欄に入ります。内容を確認してから保存・次へ進んでください。</small>
+        <small>停止するまで聞き取りを続けます。話した内容は文字として入力欄に入り、録音バックアップも残します。</small>
+        <small data-recording-message data-voice-state="${recordingSupported ? "info" : "error"}">
+          ${recordingSupported ? "録音データはこのブラウザ内に保存されます。" : "このブラウザでは録音バックアップを保存できません。"}
+        </small>
+        <div class="recording-actions" data-recording-actions></div>
       </div>
     </div>
   `;
@@ -844,7 +1026,7 @@ app.addEventListener("click", (event) => {
 
   const action = target.dataset.action;
   if (action === "voice-toggle") {
-    if (isVoiceListening) {
+    if (isVoiceSessionActive()) {
       stopVoiceInput();
       return;
     }
@@ -853,7 +1035,7 @@ app.addEventListener("click", (event) => {
     const fallbackSelector = target.dataset.voiceFor === "deep" ? "[data-deep-answer]" : "[data-answer]";
     const storedTextarea = activeVoiceTextarea?.matches(fallbackSelector) ? activeVoiceTextarea : null;
     const fallbackTextarea = target.closest(".question-card")?.querySelector(fallbackSelector);
-    startVoiceInput(focusedTextarea ?? storedTextarea ?? fallbackTextarea);
+    startVoiceInput(focusedTextarea ?? storedTextarea ?? fallbackTextarea, target.dataset.voiceFor);
     return;
   }
   if (action === "chapter") {

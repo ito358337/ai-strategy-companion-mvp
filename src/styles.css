@@ -365,6 +365,47 @@ h3 {
   line-height: 1.5;
 }
 
+.voice-copy small[data-voice-state="listening"] {
+  color: var(--red);
+  font-weight: 700;
+}
+
+.voice-copy small[data-voice-state="error"] {
+  color: var(--red);
+}
+
+.voice-copy small[data-voice-state="done"] {
+  color: var(--green);
+  font-weight: 700;
+}
+
+.recording-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin-top: 6px;
+}
+
+.recording-actions audio {
+  width: min(320px, 100%);
+  height: 34px;
+}
+
+.recording-actions a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 34px;
+  padding: 0 10px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: #fbfcfe;
+  color: var(--accent-strong);
+  font-size: 0.9rem;
+  font-weight: 800;
+  text-decoration: none;
+}
+
 .deep-prompt,
 .deep-dive-panel,
 .summary-box {
