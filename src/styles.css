@@ -302,6 +302,69 @@ h3 {
   outline: 3px solid var(--accent-soft);
 }
 
+.voice-input {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 10px;
+  padding: 12px;
+  border: 1px solid #b8d5df;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.voice-button {
+  min-height: 46px;
+  padding: 0 18px;
+  border: 1px solid var(--accent);
+  border-radius: 8px;
+  background: #ffffff;
+  color: var(--accent-strong);
+  font-weight: 800;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.voice-button:hover:not(:disabled) {
+  background: var(--accent-soft);
+}
+
+.voice-button.is-listening {
+  border-color: var(--red);
+  background: var(--red-soft);
+  color: var(--red);
+}
+
+.voice-copy {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.voice-copy p {
+  margin: 0;
+  color: var(--accent-strong);
+  font-weight: 800;
+  line-height: 1.5;
+}
+
+.voice-copy p[data-voice-state="listening"] {
+  color: var(--red);
+}
+
+.voice-copy p[data-voice-state="error"] {
+  color: var(--red);
+}
+
+.voice-copy p[data-voice-state="done"] {
+  color: var(--green);
+}
+
+.voice-copy small {
+  color: var(--muted);
+  line-height: 1.5;
+}
+
 .deep-prompt,
 .deep-dive-panel,
 .summary-box {
@@ -524,6 +587,15 @@ h3 {
 
   .hint-grid {
     grid-template-columns: 1fr;
+  }
+
+  .voice-input {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .voice-button {
+    width: 100%;
   }
 
   .deep-dive-panel.is-waiting,

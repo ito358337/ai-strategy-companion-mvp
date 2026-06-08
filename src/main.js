@@ -42,6 +42,10 @@ let state = null;
 let saveTimer = null;
 let activeDeepDiveIndex = 0;
 const deepDiveStartedQuestions = new Set();
+let speechRecognition = null;
+let activeVoiceTextarea = null;
+let isVoiceListening = false;
+let lastVoiceError = false;
 
 async function loadJson(path) {
   const response = await fetch(path);
@@ -171,6 +175,126 @@ function showSaveState(message) {
   if (node) node.textContent = message;
 }
 
+function getSpeechRecognitionConstructor() {
+  return window.SpeechRecognition || window.webkitSpeechRecognition;
+}
+
+function isSpeechRecognitionSupported() {
+  return Boolean(getSpeechRecognitionConstructor());
+}
+
+function initSpeechRecognition() {
+  if (!isSpeechRecognitionSupported()) return null;
+  if (speechRecognition) return speechRecognition;
+
+  const SpeechRecognition = getSpeechRecognitionConstructor();
+  const recognition = new SpeechRecognition();
+  recognition.lang = "ja-JP";
+  recognition.interimResults = true;
+  recognition.continuous = false;
+
+  recognition.onstart = () => {
+    isVoiceListening = true;
+    lastVoiceError = false;
+    showVoiceStatus("聞き取り中です。思いつくまま話してください。", "listening");
+    updateVoiceButtons();
+  };
+
+  recognition.onresult = (event) => {
+    let finalText = "";
+    let interimText = "";
+
+    for (let index = event.resultIndex; index < event.results.length; index += 1) {
+      const transcript = event.results[index][0].transcript.trim();
+      if (event.results[index].isFinal) {
+        finalText += transcript;
+      } else {
+        interimText += transcript;
+      }
+    }
+
+    if (finalText) appendRecognizedText(finalText);
+    if (interimText) showVoiceStatus(`認識中：${interimText}`, "listening");
+  };
+
+  recognition.onerror = (event) => {
+    handleVoiceError(event.error);
+  };
+
+  recognition.onend = () => {
+    isVoiceListening = false;
+    updateVoiceButtons();
+    if (activeVoiceTextarea && !lastVoiceError) {
+      showVoiceStatus("文字起こししました。必要に応じて少し整えてください。", "done");
+    }
+  };
+
+  speechRecognition = recognition;
+  return speechRecognition;
+}
+
+function startVoiceInput(targetTextarea) {
+  if (!isSpeechRecognitionSupported()) {
+    showVoiceStatus("このブラウザは音声入力に対応していません。Google Chromeでお試しください。", "error");
+    return;
+  }
+
+  activeVoiceTextarea = targetTextarea ?? document.activeElement;
+  if (!activeVoiceTextarea?.matches("textarea")) {
+    activeVoiceTextarea = document.querySelector("[data-answer]");
+  }
+
+  if (isVoiceListening) stopVoiceInput();
+
+  try {
+    initSpeechRecognition().start();
+  } catch {
+    showVoiceStatus("音声入力を開始できませんでした。少し待ってからもう一度お試しください。", "error");
+  }
+}
+
+function stopVoiceInput() {
+  if (!speechRecognition || !isVoiceListening) return;
+  speechRecognition.stop();
+}
+
+function appendRecognizedText(text) {
+  if (!activeVoiceTextarea || !text.trim()) return;
+
+  const currentValue = activeVoiceTextarea.value.trimEnd();
+  const separator = currentValue ? " " : "";
+  activeVoiceTextarea.value = `${currentValue}${separator}${text.trim()}`;
+  activeVoiceTextarea.focus();
+  activeVoiceTextarea.dispatchEvent(new Event("input", { bubbles: true }));
+}
+
+function showVoiceStatus(message, type = "info") {
+  document.querySelectorAll("[data-voice-message]").forEach((node) => {
+    node.textContent = message;
+    node.dataset.voiceState = type;
+  });
+}
+
+function handleVoiceError(error) {
+  isVoiceListening = false;
+  lastVoiceError = true;
+  updateVoiceButtons();
+
+  if (error === "not-allowed" || error === "service-not-allowed") {
+    showVoiceStatus("マイクの使用が許可されませんでした。Chromeの設定からマイクを許可してください。", "error");
+    return;
+  }
+
+  showVoiceStatus("音声入力でエラーが起きました。通常のテキスト入力はそのまま使えます。", "error");
+}
+
+function updateVoiceButtons() {
+  document.querySelectorAll("[data-action='voice-toggle']").forEach((button) => {
+    button.textContent = isVoiceListening ? "⏹ 停止" : "🎙 話して答える";
+    button.classList.toggle("is-listening", isVoiceListening);
+  });
+}
+
 function getCurrentChapter() {
   return questionBank.chapters.find((chapter) => chapter.category.id === state.currentChapter);
 }
@@ -209,6 +333,7 @@ function getChapterProgress(chapter) {
 }
 
 function setCurrentQuestion(chapterId, questionId) {
+  stopVoiceInput();
   state.currentChapter = chapterId;
   state.currentQuestionId = questionId;
   const answer = getAnswer(questionId);
@@ -297,6 +422,7 @@ function beginDeepDive() {
 }
 
 function continueDeepDive() {
+  stopVoiceInput();
   const question = getCurrentQuestion();
   const answer = getAnswer(question.id);
   const current = answer.deepDiveAnswers[activeDeepDiveIndex];
@@ -306,6 +432,7 @@ function continueDeepDive() {
 }
 
 function summarizeAndMoveNext() {
+  stopVoiceInput();
   const question = getCurrentQuestion();
   const answer = getAnswer(question.id);
   const summary = generateQuestionSummary(question, answer);
@@ -396,6 +523,7 @@ function exportMarkdown() {
 }
 
 function resetSession() {
+  stopVoiceInput();
   state = createSession();
   persistSession(true);
   render();
@@ -464,6 +592,23 @@ function renderQuestionSummary(answer) {
       <span>この問いの整理</span>
       ${paragraphs}
     </section>
+  `;
+}
+
+function renderVoiceInputControls(target) {
+  const supported = isSpeechRecognitionSupported();
+  return `
+    <div class="voice-input" data-voice-target="${target}">
+      <button class="voice-button" data-action="voice-toggle" data-voice-for="${target}" ${supported ? "" : "disabled"}>
+        🎙 話して答える
+      </button>
+      <div class="voice-copy">
+        <p data-voice-message data-voice-state="${supported ? "info" : "error"}">
+          ${supported ? "音声入力はGoogle Chromeでの利用を推奨しています。" : "このブラウザは音声入力に対応していません。Google Chromeでお試しください。"}
+        </p>
+        <small>話した内容は文字として入力欄に入ります。内容を確認してから保存・次へ進んでください。</small>
+      </div>
+    </div>
   `;
 }
 
@@ -556,6 +701,7 @@ function renderDeepDivePanel(answer) {
         <span>追加回答</span>
         <textarea data-deep-answer placeholder="その場面や気持ちを、短くてもいいので書いてください。">${escapeHtml(activeItem.answer)}</textarea>
       </label>
+      ${renderVoiceInputControls("deep")}
 
       <div class="deep-actions">
         ${
@@ -644,6 +790,7 @@ function render() {
               <span>基本回答</span>
               <textarea data-answer placeholder="今の考えをそのまま書いてください。短くても大丈夫です。">${escapeHtml(answer.basicAnswer)}</textarea>
             </label>
+            ${renderVoiceInputControls("basic")}
 
             ${renderDeepDivePanel(answer)}
 
@@ -673,6 +820,7 @@ function render() {
       </div>
     </main>
   `;
+  updateVoiceButtons();
 }
 
 app.addEventListener("input", (event) => {
@@ -684,11 +832,30 @@ app.addEventListener("input", (event) => {
   }
 });
 
+app.addEventListener("focusin", (event) => {
+  if (event.target.matches("textarea")) {
+    activeVoiceTextarea = event.target;
+  }
+});
+
 app.addEventListener("click", (event) => {
   const target = event.target.closest("[data-action]");
   if (!target) return;
 
   const action = target.dataset.action;
+  if (action === "voice-toggle") {
+    if (isVoiceListening) {
+      stopVoiceInput();
+      return;
+    }
+
+    const focusedTextarea = document.activeElement?.matches("textarea") ? document.activeElement : null;
+    const fallbackSelector = target.dataset.voiceFor === "deep" ? "[data-deep-answer]" : "[data-answer]";
+    const storedTextarea = activeVoiceTextarea?.matches(fallbackSelector) ? activeVoiceTextarea : null;
+    const fallbackTextarea = target.closest(".question-card")?.querySelector(fallbackSelector);
+    startVoiceInput(focusedTextarea ?? storedTextarea ?? fallbackTextarea);
+    return;
+  }
   if (action === "chapter") {
     const chapter = questionBank.chapters.find((item) => item.category.id === target.dataset.chapterId);
     setCurrentQuestion(chapter.category.id, chapter.questions[0].id);
