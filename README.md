@@ -29,6 +29,10 @@ npm run check
 
 回答はMVP用にブラウザのlocalStorageへ保存します。
 
+## 使い方ガイド
+
+社内テストや少人数での試用には、`docs/userGuide.md` を参照してください。
+
 ## GitHub / Vercel公開
 
 1. このフォルダをGitHubリポジトリへpushします。

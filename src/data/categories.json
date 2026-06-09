@@ -3,5 +3,5 @@
   {"id":"tactics","name":"戦術編","description":"販売プロセスの設計"},
   {"id":"promotion","name":"宣伝編","description":"ブランディングとアプローチ"},
   {"id":"experience","name":"体験編","description":"顧客体験と感情的価値"},
-  {"id":"philosophy","name":"哲学編","description":"伴走経営哲学"}
+  {"id":"philosophy","name":"自社の経営哲学","description":"自社の経営哲学"}
 ]

@@ -48,15 +48,15 @@
   {
     "id": "PHI-003",
     "category": "philosophy",
-    "theme": "絆徳経営",
+    "theme": "自社の経営哲学",
     "subTheme": "三方よし",
     "importance": "high",
     "level1": "会社の利益とお客様の利益、どちらを優先すべきだと考えていますか？",
     "level2": "相手によいことをするからずっと一緒にいられるという考え方に共感しますか？",
     "level3": "相手の幸せを心から願う姿勢が最大の利益を生むと信じられますか？",
-    "aiSummary": "道徳と合理性を融合した「絆徳経営」",
+    "aiSummary": "道徳と合理性を融合した「自社の経営哲学」",
     "framework": [
-      "絆徳経営"
+      "自社の経営哲学"
     ],
     "pdfOutput": "philosophy",
     "nextQuestion": [
