@@ -1,12 +1,14 @@
-const STORAGE_KEY = "ai-strategy-companion:mvp-light:session";
+const BASE_STORAGE_KEY = "ai-strategy-companion:mvp-light:session";
+const isTestDistribution = window.location.pathname.startsWith("/test");
+const STORAGE_KEY = isTestDistribution ? `${BASE_STORAGE_KEY}:test-distribution` : BASE_STORAGE_KEY;
 const RECORDING_DB_NAME = "ai-strategy-companion-recordings";
 const RECORDING_STORE_NAME = "voice-recordings";
 const QUESTION_FILES = {
-  strategy: "./src/data/question-bank/strategy.json",
-  tactics: "./src/data/question-bank/tactics.json",
-  promotion: "./src/data/question-bank/promotion.json",
-  experience: "./src/data/question-bank/experience.json",
-  philosophy: "./src/data/question-bank/philosophy.json",
+  strategy: "/src/data/question-bank/strategy.json",
+  tactics: "/src/data/question-bank/tactics.json",
+  promotion: "/src/data/question-bank/promotion.json",
+  experience: "/src/data/question-bank/experience.json",
+  philosophy: "/src/data/question-bank/philosophy.json",
 };
 
 const deepDiveTemplates = [
@@ -64,7 +66,7 @@ async function loadJson(path) {
 }
 
 async function loadQuestionBank() {
-  const categories = await loadJson("./src/data/categories.json");
+  const categories = await loadJson("/src/data/categories.json");
   const chapters = await Promise.all(
     categories.map(async (category, index) => ({
       category,
@@ -922,8 +924,9 @@ function render() {
         </div>
         <div class="header-actions">
           <span data-save-state>保存済み</span>
+          ${isTestDistribution ? `<span class="mode-badge">テスト配布用</span>` : ""}
           <button class="ghost-button" data-action="export">Markdown出力</button>
-          <button class="ghost-button" data-action="reset">リセット</button>
+          ${isTestDistribution ? "" : `<button class="ghost-button" data-action="reset">リセット</button>`}
         </div>
       </header>
 

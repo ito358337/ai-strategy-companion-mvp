@@ -107,6 +107,16 @@ h3 {
   text-align: right;
 }
 
+.header-actions .mode-badge {
+  min-width: auto;
+  border: 1px solid #bad7d2;
+  border-radius: 999px;
+  color: var(--accent);
+  padding: 0.35rem 0.65rem;
+  background: #f4fbf9;
+  font-weight: 700;
+}
+
 .stats,
 .study-panel,
 .sidebar {
