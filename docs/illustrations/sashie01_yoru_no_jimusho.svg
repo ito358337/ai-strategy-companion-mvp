@@ -1,0 +1,168 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" font-family="sans-serif">
+  <defs>
+    <!-- 生成りの紙地 -->
+    <radialGradient id="paper" cx="50%" cy="42%" r="75%">
+      <stop offset="0%" stop-color="#FBF4E4"/>
+      <stop offset="70%" stop-color="#F6ECD6"/>
+      <stop offset="100%" stop-color="#EFE2C6"/>
+    </radialGradient>
+    <!-- 夜空(窓の外) -->
+    <linearGradient id="night" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#2E3A55"/>
+      <stop offset="60%" stop-color="#3C4A66"/>
+      <stop offset="100%" stop-color="#55617B"/>
+    </linearGradient>
+    <!-- 蛍光灯の光のコーン -->
+    <linearGradient id="lampcone" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#FFF6D8" stop-opacity="0.85"/>
+      <stop offset="100%" stop-color="#FFF6D8" stop-opacity="0"/>
+    </linearGradient>
+    <!-- 遠くの家の灯り -->
+    <radialGradient id="warmglow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#FFC46B" stop-opacity="0.95"/>
+      <stop offset="55%" stop-color="#FFAE45" stop-opacity="0.35"/>
+      <stop offset="100%" stop-color="#FFAE45" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="deskglow" cx="50%" cy="30%" r="70%">
+      <stop offset="0%" stop-color="#FFF3CF" stop-opacity="0.9"/>
+      <stop offset="100%" stop-color="#FFF3CF" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="soft" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="6"/>
+    </filter>
+    <filter id="soft2" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="14"/>
+    </filter>
+  </defs>
+
+  <!-- 背景の紙 -->
+  <rect width="1600" height="900" fill="url(#paper)"/>
+
+  <!-- 部屋のほのかな影(夜の室内感) -->
+  <rect x="60" y="60" width="1480" height="780" rx="26" fill="#6E6250" opacity="0.10"/>
+
+  <!-- ===== 窓(右側) ===== -->
+  <g>
+    <rect x="1010" y="150" width="430" height="380" rx="14" fill="#8A7A5F"/>
+    <rect x="1026" y="166" width="398" height="348" rx="8" fill="url(#night)"/>
+    <!-- 月 -->
+    <circle cx="1110" cy="230" r="26" fill="#F4EBCF" opacity="0.9"/>
+    <circle cx="1100" cy="222" r="24" fill="url(#night)" opacity="0.55"/>
+    <!-- 遠くの暗い街並み -->
+    <g fill="#2A3450">
+      <rect x="1040" y="404" width="66" height="86"/>
+      <polygon points="1040,404 1073,382 1106,404"/>
+      <rect x="1118" y="418" width="58" height="72"/>
+      <polygon points="1118,418 1147,398 1176,418"/>
+      <rect x="1330" y="410" width="62" height="80"/>
+      <polygon points="1330,410 1361,388 1392,410"/>
+    </g>
+    <!-- 灯りのともる一軒(希望) -->
+    <circle cx="1252" cy="420" r="86" fill="url(#warmglow)"/>
+    <g>
+      <rect x="1214" y="408" width="76" height="82" fill="#4B4234"/>
+      <polygon points="1206,410 1252,378 1298,410" fill="#5C5140"/>
+      <rect x="1228" y="424" width="20" height="18" rx="2" fill="#FFCE7E"/>
+      <rect x="1256" y="424" width="20" height="18" rx="2" fill="#FFC46B"/>
+      <rect x="1240" y="456" width="18" height="34" rx="2" fill="#3A332A"/>
+    </g>
+    <!-- 窓の桟 -->
+    <line x1="1225" y1="166" x2="1225" y2="514" stroke="#8A7A5F" stroke-width="10"/>
+    <line x1="1026" y1="340" x2="1424" y2="340" stroke="#8A7A5F" stroke-width="10"/>
+  </g>
+
+  <!-- ===== 蛍光灯 ===== -->
+  <g>
+    <line x1="560" y1="60" x2="560" y2="118" stroke="#9A8B70" stroke-width="6"/>
+    <line x1="760" y1="60" x2="760" y2="118" stroke="#9A8B70" stroke-width="6"/>
+    <rect x="500" y="112" width="330" height="26" rx="13" fill="#B9AC8F"/>
+    <rect x="516" y="120" width="298" height="12" rx="6" fill="#FFF9E4"/>
+    <!-- 光のコーン -->
+    <polygon points="516,138 814,138 940,560 390,560" fill="url(#lampcone)"/>
+  </g>
+
+  <!-- ===== 机まわり ===== -->
+  <ellipse cx="665" cy="700" rx="430" ry="60" fill="#6E6250" opacity="0.16" filter="url(#soft2)"/>
+  <ellipse cx="665" cy="540" rx="360" ry="150" fill="url(#deskglow)"/>
+
+  <!-- 机 -->
+  <rect x="330" y="586" width="680" height="30" rx="10" fill="#A98C62"/>
+  <rect x="352" y="616" width="26" height="120" fill="#8F7550"/>
+  <rect x="962" y="616" width="26" height="120" fill="#8F7550"/>
+  <rect x="330" y="586" width="680" height="10" rx="5" fill="#C3A778"/>
+
+  <!-- 図面(青焼き・机の上) -->
+  <g transform="rotate(-7 470 545)">
+    <rect x="382" y="492" width="176" height="104" rx="6" fill="#DCE8EA" stroke="#9FB8BC" stroke-width="2"/>
+    <g stroke="#7FA3A9" stroke-width="3" fill="none">
+      <rect x="406" y="514" width="66" height="48"/>
+      <line x1="438" y1="514" x2="438" y2="562"/>
+      <line x1="406" y1="538" x2="472" y2="538"/>
+      <rect x="486" y="522" width="40" height="28"/>
+    </g>
+  </g>
+
+  <!-- 売上グラフ(下降・机の上) -->
+  <g transform="rotate(5 860 545)">
+    <rect x="772" y="488" width="180" height="112" rx="6" fill="#FFFDF4" stroke="#D8C9A6" stroke-width="2"/>
+    <line x1="796" y1="510" x2="796" y2="578" stroke="#B7A987" stroke-width="3"/>
+    <line x1="796" y1="578" x2="932" y2="578" stroke="#B7A987" stroke-width="3"/>
+    <polyline points="804,520 836,532 866,528 896,552 926,570" fill="none" stroke="#C96F4A" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+    <polygon points="926,570 911,559 907,574" fill="#C96F4A"/>
+  </g>
+
+  <!-- 湯呑み(机の右端) -->
+  <g>
+    <rect x="964" y="540" width="34" height="30" rx="10" fill="#7C8F6E"/>
+    <ellipse cx="981" cy="541" rx="17" ry="6" fill="#9DB08C"/>
+    <path d="M 974 528 q 4 -10 0 -16" stroke="#B7A987" stroke-width="3" fill="none" opacity="0.7"/>
+    <path d="M 988 528 q 4 -10 0 -16" stroke="#B7A987" stroke-width="3" fill="none" opacity="0.5"/>
+  </g>
+
+  <!-- ===== 経営者の後ろ姿 ===== -->
+  <g>
+    <!-- 椅子 -->
+    <rect x="596" y="700" width="150" height="16" rx="8" fill="#6B5B44"/>
+    <rect x="660" y="716" width="20" height="60" fill="#6B5B44"/>
+    <!-- 体(作業ジャケット) -->
+    <path d="M 588 700 q -10 -120 32 -156 q 50 -32 100 0 q 42 36 32 156 z" fill="#4A5A75"/>
+    <path d="M 588 700 q -10 -120 32 -156 l 10 12 q -34 40 -26 144 z" fill="#3E4C64"/>
+    <!-- 襟 -->
+    <path d="M 640 548 q 30 18 62 0 l -8 22 q -24 12 -46 0 z" fill="#E9E4D2"/>
+    <!-- 頭(後ろ姿: 髪が頭の大半を覆う) -->
+    <circle cx="671" cy="520" r="34" fill="#E8C49C"/>
+    <path d="M 637 520 a 34 34 0 1 1 68 0 l 0 14 q -14 -10 -34 -10 q -20 0 -34 10 z" fill="#4A4038"/>
+    <!-- うつむき気味の首元の影 -->
+    <ellipse cx="671" cy="552" rx="22" ry="8" fill="#3E4C64" opacity="0.5"/>
+    <!-- 腕(机につく) -->
+    <path d="M 600 640 q 10 -40 44 -36 l -4 22 q -22 0 -28 26 z" fill="#4A5A75"/>
+    <path d="M 742 640 q -10 -40 -44 -36 l 4 22 q 22 0 28 26 z" fill="#4A5A75"/>
+  </g>
+
+  <!-- ===== 手前の若葉のアクセント ===== -->
+  <g opacity="0.9">
+    <path d="M 90 830 q 60 -90 30 -180" stroke="#8FAF7E" stroke-width="6" fill="none" stroke-linecap="round"/>
+    <g fill="#A9C494">
+      <ellipse cx="112" cy="700" rx="26" ry="12" transform="rotate(-35 112 700)"/>
+      <ellipse cx="132" cy="742" rx="24" ry="11" transform="rotate(-15 132 742)"/>
+      <ellipse cx="108" cy="786" rx="26" ry="12" transform="rotate(-45 108 786)"/>
+    </g>
+    <g fill="#8FAF7E">
+      <ellipse cx="88" cy="722" rx="22" ry="10" transform="rotate(35 88 722)"/>
+      <ellipse cx="98" cy="766" rx="20" ry="9" transform="rotate(25 98 766)"/>
+    </g>
+  </g>
+  <g opacity="0.9" transform="translate(1600,0) scale(-1,1)">
+    <path d="M 80 840 q 50 -70 26 -150" stroke="#8FAF7E" stroke-width="5" fill="none" stroke-linecap="round"/>
+    <g fill="#A9C494">
+      <ellipse cx="100" cy="724" rx="22" ry="10" transform="rotate(-35 100 724)"/>
+      <ellipse cx="116" cy="764" rx="20" ry="9" transform="rotate(-15 116 764)"/>
+    </g>
+    <g fill="#8FAF7E">
+      <ellipse cx="80" cy="748" rx="18" ry="8" transform="rotate(35 80 748)"/>
+    </g>
+  </g>
+
+  <!-- 画面全体をやわらげる生成りのビネット -->
+  <rect width="1600" height="900" fill="url(#paper)" opacity="0.12"/>
+</svg>
