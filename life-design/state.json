@@ -1,0 +1,88 @@
+{
+  "version": 1,
+  "updated": "2026-07-12",
+  "environment": {
+    "type": "persistent",
+    "detail": "Claude Code（リポジトリにファイルを残せる。正本はこの life-design/ 配下。セッション終了前に必ず commit & push しないと消える）",
+    "branch": "claude/life-coevolution-os-idolmx",
+    "carry_over_card_required": false
+  },
+  "phase_internal": "L0_fire_ignition",
+  "fire": {
+    "last_day_scene": null,
+    "life_sentence_L0": null,
+    "why_sentence_L1": null,
+    "goal_outside_L2": null,
+    "first_person_or_thing_within_6mo": null,
+    "fire_size_1to5": null
+  },
+  "body_signal": {
+    "hit": null,
+    "miss": null,
+    "asked_yet": false,
+    "note": "起動時の聞き取りは未実施。火の問いが先。確定の直前ゲートで使う本人固有の言葉を、会話の中から拾うか、自然なタイミングで1回だけ聞く"
+  },
+  "kasegi_frame_placed": false,
+  "self_bias_declaration": {
+    "unseen_areas": [
+      "お金の実物（収入・固定費・自由額・資産負債：一切未受領。確信度上限65%ゲート適用中）",
+      "体の実データ（睡眠・体調・持病・体重推移：未受領）",
+      "人間関係の摩擦（家族・仕事相手との実際のやりとり：未見）"
+    ],
+    "corrections": [
+      "実物を見ずに断定しない（数字は『実額確定後に算定』と言う）",
+      "直近の発言・このリポジトリの内容を本人の全体だと過大評価しない",
+      "本人の物語を美化しない（きれいな言葉は体の絵まで剥がす）"
+    ]
+  },
+  "hypotheses": [
+    {
+      "id": "H1",
+      "text": "本人は経営者支援・伴走型の仕事（コーチ/コンサル/講師系）をしており、他者の伴走に時間を使う一方、自分自身の火は後回しになりがち",
+      "prior": 0.65,
+      "evidence": "このリポジトリが『AI経営伴走アプリ』（中小企業経営者向け・想い/経験を引き出す設計）である。OS文中に税理士/社労士/LIVE/ブログ/X等の語彙",
+      "falsify_if": "本人の仕事が支援業でない、または自分の火が既に日々の中心にあると確認できたら",
+      "posterior": null
+    },
+    {
+      "id": "H2",
+      "text": "発信・コンテンツ・仕組みづくりは得意で増やせるが、値付け・請求という稼ぎの最後の一節が閉じていない（OS自体がその防波堤を何重にも組んでいる）",
+      "prior": 0.6,
+      "evidence": "OSに『発信への逃げ＝稼ぎからの逃げ』『安売りしない信念』『請求の怖さ』への装置が異常に厚い＝本人の実体験由来の可能性が高い",
+      "falsify_if": "既に請求・成約が定常的に回っている実データが出てきたら",
+      "posterior": null
+    },
+    {
+      "id": "H3",
+      "text": "抱え込み癖：『委ねる』と言いつつ、事務・経理・ツール作り・段取りを実際は自分で持っている",
+      "prior": 0.65,
+      "evidence": "OSに『委ねたと言ってるものと実際に手放せてるもののギャップ検出』『枝を10本広げたら刈って』が明記＝自己認識済みの癖",
+      "falsify_if": "委任の実績（外注・専門家・家族への実際の受け渡し）が確認できたら",
+      "posterior": null
+    },
+    {
+      "id": "H4",
+      "text": "頭より体で分かるタイプ。論理で詰められると固まり、『止めて』が言えない",
+      "prior": 0.7,
+      "evidence": "OS本文に本人自身の記述として明記（『私は頭より体で分かる人』『固まる人は止めてを言えない』）。ほぼ本人申告だが、実際の対話での挙動は未確認",
+      "falsify_if": "対話で論理的な詰めをむしろ好む挙動が続いたら",
+      "posterior": null
+    },
+    {
+      "id": "H5",
+      "text": "火の中心は家族（大切な人との食卓）であり、事業の成功はその手段側にある",
+      "prior": 0.55,
+      "evidence": "OSの結びが『大切な人と囲む、なんてことない食卓』。ただしこれはOSテンプレの文である可能性もあり、本人固有かは未確認",
+      "falsify_if": "①の答えで最後の日の景色に家族が出てこなかったら",
+      "posterior": null
+    }
+  ],
+  "trunks_max3": [],
+  "current_bottleneck": null,
+  "hold_box": [],
+  "kasegi_node": {
+    "last_moved": null,
+    "consecutive_zero_days": 0
+  },
+  "next_action": "①火の問い（最後の日）への本人の答えを待つ。答えが来たら：体の絵まで剥がす→復唱ペアで共通理解→L1原体験へ。疲れ表明があれば②夢中の場面から温める"
+}
