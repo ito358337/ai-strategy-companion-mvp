@@ -9,7 +9,7 @@
   },
   "phase_internal": "L0_fire_ignition",
   "fire": {
-    "last_day_scene": null,
+    "last_day_scene": "（下書き・未確定）家族＝妻と子どもたちに囲まれて目を閉じる。泣かれるのではなく『大丈夫だよ、私たちが全部しっかり受け継いでやっていくから』と言われる。→ 受け継がれる『全て』の中身が未言語化",
     "life_sentence_L0": null,
     "why_sentence_L1": null,
     "goal_outside_L2": null,
@@ -74,7 +74,8 @@
       "prior": 0.55,
       "evidence": "OSの結びが『大切な人と囲む、なんてことない食卓』。ただしこれはOSテンプレの文である可能性もあり、本人固有かは未確認",
       "falsify_if": "①の答えで最後の日の景色に家族が出てこなかったら",
-      "posterior": null
+      "posterior": 0.85,
+      "update_note": "2026-07-13 ①の答えで支持（景色の中心が妻と子。反証に行ったが逆に支持された）。ただし『受け継ぐ』が家族像の核＝単なる団らんより継承が主題、という新情報あり"
     }
   ],
   "trunks_max3": [],
