@@ -988,6 +988,7 @@ function render() {
         <div class="header-actions">
           <span data-save-state>保存済み</span>
           ${isTestDistribution ? `<span class="mode-badge">テスト配布用</span>` : ""}
+          <a class="ghost-button" href="${isTestDistribution ? "../estimate/" : "estimate/"}">見積システム</a>
           <button class="ghost-button" data-action="export-pdf">PDF出力</button>
           <button class="ghost-button" data-action="export">Markdown出力</button>
           ${isTestDistribution ? "" : `<button class="ghost-button" data-action="reset">リセット</button>`}
