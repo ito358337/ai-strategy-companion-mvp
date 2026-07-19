@@ -625,9 +625,17 @@ function summarizeAndMoveNext() {
   moveQuestion(1);
 }
 
+function truncateForSheet(text, maxLength = 60) {
+  const normalized = text.trim().replace(/\s+/g, " ");
+  if (normalized.length <= maxLength) return normalized;
+  const firstSentence = normalized.split(/[。！？!?]/)[0];
+  if (firstSentence && firstSentence.length <= maxLength) return firstSentence;
+  return `${normalized.slice(0, maxLength)}…`;
+}
+
 function generateQuestionSummary(question, answer) {
   const oneWord = answer.deepDiveAnswers.find((item) => item.type === "oneWord")?.answer.trim();
-  const fallback = answer.basicAnswer.trim().split(/\s+/).slice(0, 24).join(" ");
+  const fallback = truncateForSheet(answer.basicAnswer);
   const pdfSentence = oneWord || fallback || "未整理";
   return {
     pdfSentence,
@@ -696,9 +704,64 @@ function exportMarkdown() {
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = url;
-  link.download = "strategy-session.md";
+  link.download = `strategy-session-${new Date().toISOString().slice(0, 10)}.md`;
   link.click();
   URL.revokeObjectURL(url);
+}
+
+function renderPrintQuestion(question) {
+  const answer = getAnswer(question.id);
+  const sentence = answer.pdfSentence.trim() || (answer.basicAnswer.trim() ? truncateForSheet(answer.basicAnswer) : "");
+  return `
+    <div class="print-question ${sentence ? "" : "is-empty"}">
+      <p class="print-question-text">${escapeHtml(question.level1)}</p>
+      <p class="print-sentence">${sentence ? escapeHtml(sentence) : "未回答"}</p>
+    </div>
+  `;
+}
+
+function renderPrintSheet() {
+  const totals = getTotals();
+  const chapterSections = questionBank.chapters
+    .map((chapter) => {
+      const summary = state.summaries[chapter.category.id] ?? generateChapterSummary(chapter);
+      return `
+        <section class="print-chapter">
+          <h2>${chapter.order}. ${escapeHtml(chapter.category.name)}<small>${escapeHtml(chapter.category.description)}</small></h2>
+          ${chapter.questions.map((question) => renderPrintQuestion(question)).join("")}
+          ${summary ? `<p class="print-chapter-summary">${escapeHtml(summary)}</p>` : ""}
+        </section>
+      `;
+    })
+    .join("");
+
+  return `
+    <header class="print-head">
+      <p class="print-eyebrow">売上アップ戦略シート</p>
+      <h1>${escapeHtml(state.title)}</h1>
+      <p class="print-meta">作成日：${new Date().toLocaleDateString("ja-JP")}　回答：${totals.answered}/${totals.total}問（${totals.percent}%）</p>
+    </header>
+    ${chapterSections}
+    ${state.summaries.all ? `<section class="print-chapter"><h2>全体まとめ</h2><p class="print-chapter-summary">${escapeHtml(state.summaries.all)}</p></section>` : ""}
+    <footer class="print-foot">${escapeHtml(questionBank.title)} ${escapeHtml(questionBank.version)}</footer>
+  `;
+}
+
+function exportPdf() {
+  stopVoiceInput();
+  const sheet = document.createElement("div");
+  sheet.className = "print-sheet";
+  sheet.innerHTML = renderPrintSheet();
+  document.body.appendChild(sheet);
+  document.body.classList.add("is-printing");
+
+  const cleanup = () => {
+    sheet.remove();
+    document.body.classList.remove("is-printing");
+    window.removeEventListener("afterprint", cleanup);
+  };
+  window.addEventListener("afterprint", cleanup);
+  window.print();
 }
 
 function resetSession() {
@@ -925,6 +988,7 @@ function render() {
         <div class="header-actions">
           <span data-save-state>保存済み</span>
           ${isTestDistribution ? `<span class="mode-badge">テスト配布用</span>` : ""}
+          <button class="ghost-button" data-action="export-pdf">PDF出力</button>
           <button class="ghost-button" data-action="export">Markdown出力</button>
           ${isTestDistribution ? "" : `<button class="ghost-button" data-action="reset">リセット</button>`}
         </div>
@@ -1057,6 +1121,7 @@ app.addEventListener("click", (event) => {
   if (action === "next") moveQuestion(1);
   if (action === "complete-chapter") completeChapter();
   if (action === "export") exportMarkdown();
+  if (action === "export-pdf") exportPdf();
   if (action === "reset") resetSession();
 });
 
