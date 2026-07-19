@@ -1,13 +1,16 @@
-const STORAGE_KEY = "aether-estimate:v1";
+const STORE_KEY = "aether-estimate:store:v2";
+const LEGACY_KEY = "aether-estimate:v1";
 const MASTER_URL = new URL("./data/estimate-master.json", import.meta.url);
 const CATEGORIES = ["材料", "施工", "経費", "その他"];
 
 const app = document.querySelector("#app");
 
+let store = null;
 let state = null;
 let view = "input";
 let saveTimer = null;
 const openRooms = new Set();
+const openMasterRooms = new Set();
 
 function createEmptySettings() {
   return {
@@ -19,15 +22,17 @@ function createEmptySettings() {
   };
 }
 
-function createEmptyState() {
+function createEmptyProject(projectName = "新規案件") {
+  const now = new Date().toISOString();
   return {
-    version: 1,
-    projectName: "リフォーム工事一式",
+    id: crypto.randomUUID(),
+    projectName,
     customerName: "",
-    date: new Date().toISOString().slice(0, 10),
-    settings: createEmptySettings(),
+    date: now.slice(0, 10),
+    settings: { ...createEmptySettings(), ...(store?.masterSettings ?? {}) },
     items: [],
-    updatedAt: new Date().toISOString(),
+    createdAt: now,
+    updatedAt: now,
   };
 }
 
@@ -56,30 +61,45 @@ function normalizeItem(item) {
   return { ...createItem(), ...item, id: item.id ?? crypto.randomUUID() };
 }
 
-function normalizeState(raw) {
-  const base = createEmptyState();
+function normalizeProject(raw) {
+  const base = createEmptyProject();
   return {
     ...base,
     ...raw,
+    id: raw.id ?? crypto.randomUUID(),
     settings: { ...base.settings, ...raw.settings },
     items: (raw.items ?? []).map(normalizeItem),
   };
 }
 
-function loadState() {
+function loadStore() {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return null;
-    return normalizeState(JSON.parse(raw));
+    const raw = localStorage.getItem(STORE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      return {
+        version: 2,
+        currentId: parsed.currentId ?? null,
+        masterSettings: parsed.masterSettings ?? null,
+        masterItems: Array.isArray(parsed.masterItems) ? parsed.masterItems.map(normalizeItem) : null,
+        projects: (parsed.projects ?? []).map(normalizeProject),
+      };
+    }
+    const legacy = localStorage.getItem(LEGACY_KEY);
+    if (legacy) {
+      const project = normalizeProject(JSON.parse(legacy));
+      return { version: 2, currentId: project.id, masterSettings: null, masterItems: null, projects: [project] };
+    }
   } catch {
-    return null;
+    // 壊れたデータは初期状態で起動する
   }
+  return { version: 2, currentId: null, masterSettings: null, masterItems: null, projects: [] };
 }
 
 function persist(feedback = true) {
-  state.updatedAt = new Date().toISOString();
+  if (state) state.updatedAt = new Date().toISOString();
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    localStorage.setItem(STORE_KEY, JSON.stringify(store));
     if (feedback) showSaveState("保存しました");
   } catch {
     showSaveState("この環境では自動保存できません");
@@ -103,14 +123,27 @@ async function loadMaster() {
   return response.json();
 }
 
-function applyMaster(master) {
-  const next = createEmptyState();
-  next.settings = { ...next.settings, ...master.settings };
-  next.items = master.items.map(normalizeItem);
-  state = next;
+function cloneItems(items) {
+  return items.map((item) => ({ ...item, id: crypto.randomUUID() }));
+}
+
+function activateProject(project) {
+  state = project;
+  store.currentId = project.id;
   openRooms.clear();
   const first = getRooms()[0];
   if (first) openRooms.add(first);
+}
+
+function addProject(project) {
+  store.projects.unshift(project);
+  activateProject(project);
+}
+
+function createProjectFromMaster(projectName) {
+  const project = createEmptyProject(projectName);
+  project.items = cloneItems(store.masterItems ?? []);
+  addProject(project);
 }
 
 // ---- 計算（Excelの数式を踏襲） ----
@@ -157,18 +190,29 @@ function roomTotals(room) {
   return { customer, exec, tax, taxIncluded: customer + tax, profit: customer - exec, margin: customer ? (customer - exec) / customer : 0 };
 }
 
-function grandTotals() {
-  const rooms = getRooms();
-  const totals = rooms.map((room) => roomTotals(room));
-  const customer = totals.reduce((sum, t) => sum + t.customer, 0);
-  const exec = totals.reduce((sum, t) => sum + t.exec, 0);
-  const tax = totals.reduce((sum, t) => sum + t.tax, 0);
+function totalsFor(project) {
+  const rooms = [];
+  for (const item of project.items) {
+    if (item.room && !rooms.includes(item.room)) rooms.push(item.room);
+  }
+  const customer = project.items.reduce((sum, item) => sum + customerAmount(item), 0);
+  const exec = project.items.reduce((sum, item) => sum + execAmount(item), 0);
+  const tax = rooms.reduce((sum, room) => {
+    const roomCustomer = project.items
+      .filter((item) => item.room === room)
+      .reduce((acc, item) => acc + customerAmount(item), 0);
+    return sum + Math.floor(roomCustomer * project.settings.taxRate);
+  }, 0);
   return { customer, exec, tax, taxIncluded: customer + tax, profit: customer - exec, margin: customer ? (customer - exec) / customer : 0 };
 }
 
-function judgment(margin) {
-  if (margin >= state.settings.targetMargin) return "OK";
-  if (margin >= state.settings.minMargin) return "注意";
+function grandTotals() {
+  return totalsFor(state);
+}
+
+function judgment(margin, settings = state.settings) {
+  if (margin >= settings.targetMargin) return "OK";
+  if (margin >= settings.minMargin) return "注意";
   return "要改善";
 }
 
@@ -216,7 +260,7 @@ function renderItemRow(item, index) {
     <div class="est-item ${item.display ? "" : "is-hidden-item"}" data-item-id="${item.id}">
       <div class="est-item-head">
         <span class="est-no">${index + 1}</span>
-        <input class="est-name" data-field="item" value="${escapeHtml(item.item)}" placeholder="工事項目" />
+        <input class="est-name" data-field="item" list="est-master-list" value="${escapeHtml(item.item)}" placeholder="工事項目（マスターと一致で自動補完）" />
         <select data-field="category">
           ${CATEGORIES.map((c) => `<option value="${c}" ${item.category === c ? "selected" : ""}>${c}</option>`).join("")}
         </select>
@@ -253,9 +297,9 @@ function renderInputView() {
     return `
       <section class="est-empty">
         <h2>明細がまだありません</h2>
-        <p>Aetherのリフォーム見積サンプル（156明細）を読み込むか、工区を追加して入力を始めてください。</p>
+        <p>単価マスターの明細を読み込むか、工区を追加して入力を始めてください。</p>
         <div class="est-empty-actions">
-          <button class="primary-button" data-action="load-master">サンプルを読み込む</button>
+          <button class="primary-button" data-action="load-master">単価マスターの明細を読み込む</button>
           <button class="secondary-button" data-action="add-room">工区を追加</button>
         </div>
       </section>
@@ -293,7 +337,13 @@ function renderInputView() {
     <div class="est-input-footer">
       <button class="secondary-button" data-action="add-room">＋ 工区を追加</button>
     </div>
+    ${renderMasterDatalist()}
   `;
+}
+
+function renderMasterDatalist() {
+  const names = [...new Set((store.masterItems ?? []).map((item) => item.item).filter(Boolean))];
+  return `<datalist id="est-master-list">${names.map((name) => `<option value="${escapeHtml(name)}"></option>`).join("")}</datalist>`;
 }
 
 // ---- お客様見積書ビュー ----
@@ -481,6 +531,109 @@ function renderAnalysisView() {
   `;
 }
 
+// ---- 案件一覧ビュー ----
+
+function renderProjectsView() {
+  const rows = [...store.projects].sort((a, b) => (b.updatedAt ?? "").localeCompare(a.updatedAt ?? ""));
+  return `
+    <section class="est-doc">
+      <h2>案件一覧</h2>
+      <div class="est-data-actions">
+        <button class="primary-button" data-action="new-from-master">＋ 新規案件（単価マスターの明細入り）</button>
+        <button class="secondary-button" data-action="new-empty">＋ 新規案件（空）</button>
+      </div>
+      <div class="est-projects">
+        ${rows
+          .map((project) => {
+            const totals = totalsFor(project);
+            const label = judgment(totals.margin, project.settings);
+            const isCurrent = project.id === state.id;
+            return `
+              <article class="est-project ${isCurrent ? "is-current" : ""}" data-project-id="${project.id}">
+                <div class="est-project-main">
+                  <strong>${escapeHtml(project.projectName)}</strong>
+                  <small>${escapeHtml(project.customerName ? `${project.customerName} 様` : "お客様名未設定")}　作成日 ${formatDate(project.date)}　更新 ${new Date(project.updatedAt).toLocaleString("ja-JP")}　${project.items.length}明細</small>
+                </div>
+                <div class="est-project-numbers">
+                  <span>税込 <strong>${yen(totals.taxIncluded)}</strong></span>
+                  <span class="est-badge ${judgmentClass(label)}">${pct(totals.margin)} ${label}</span>
+                </div>
+                <div class="est-project-actions">
+                  ${isCurrent ? `<span class="est-badge is-ok">編集中</span>` : `<button class="primary-button" data-action="open-project">開く</button>`}
+                  <button class="secondary-button" data-action="duplicate-project">複製</button>
+                  <button class="secondary-button" data-action="rename-project">名称変更</button>
+                  <button class="ghost-button" data-action="delete-project">削除</button>
+                </div>
+              </article>
+            `;
+          })
+          .join("")}
+      </div>
+      <p class="est-hint">案件ごとに明細・設定・お客様情報が保存されます。「複製」は同じ明細で新しい案件を作るので、類似工事の見積に便利です。</p>
+    </section>
+  `;
+}
+
+// ---- 単価マスタービュー ----
+
+function renderMasterItemRow(entry) {
+  return `
+    <div class="est-item est-master-item" data-master-id="${entry.id}">
+      <div class="est-item-head">
+        <input class="est-name" data-master-field="item" value="${escapeHtml(entry.item)}" placeholder="工事項目" />
+        <select data-master-field="category">
+          ${CATEGORIES.map((c) => `<option value="${c}" ${entry.category === c ? "selected" : ""}>${c}</option>`).join("")}
+        </select>
+        <button class="est-delete" data-action="delete-master-item" title="このマスター行を削除">✕</button>
+      </div>
+      <div class="est-item-grid est-master-grid">
+        <label><span>単位</span><input data-master-field="unit" value="${escapeHtml(entry.unit)}" /></label>
+        <label><span>お客様単価</span><input type="number" step="any" inputmode="numeric" data-master-field="custUnitPrice" value="${numAttr(entry.custUnitPrice)}" /></label>
+        <label><span>実行単価（原価）</span><input type="number" step="any" inputmode="numeric" data-master-field="execUnitPrice" value="${numAttr(entry.execUnitPrice)}" /></label>
+        <label><span>商品名・品番</span><input data-master-field="productNote" value="${escapeHtml(entry.productNote)}" /></label>
+        <label><span>定価・掛率・人工費</span><input data-master-field="priceNote" value="${escapeHtml(entry.priceNote)}" /></label>
+      </div>
+    </div>
+  `;
+}
+
+function renderMasterView() {
+  const items = store.masterItems ?? [];
+  const rooms = [];
+  for (const item of items) {
+    if (item.room && !rooms.includes(item.room)) rooms.push(item.room);
+  }
+  return `
+    <section class="est-doc">
+      <h2>単価マスター</h2>
+      <p class="est-hint">新規案件のひな形と、入力画面の自動補完（工事項目名がマスターと一致すると単価・単位・品番を自動入力）に使われます。マスターを変更しても既存案件の金額は変わりません。</p>
+      <div class="est-data-actions">
+        <button class="secondary-button" data-action="add-master-room">＋ 工区を追加</button>
+        <button class="ghost-button" data-action="reset-master">Aether初期マスター（156明細）に戻す</button>
+      </div>
+      ${rooms
+        .map((room) => {
+          const roomEntries = items.filter((item) => item.room === room);
+          return `
+            <details class="est-room" data-scope="master" data-room="${escapeHtml(room)}" ${openMasterRooms.has(room) ? "open" : ""}>
+              <summary>
+                <span class="est-room-name">${escapeHtml(room)}<small>${roomEntries.length}件</small></span>
+              </summary>
+              <div class="est-room-body">
+                ${roomEntries.map((entry) => renderMasterItemRow(entry)).join("")}
+                <div class="est-room-actions">
+                  <button class="secondary-button" data-action="add-master-item" data-room="${escapeHtml(room)}">＋ この工区にマスター行を追加</button>
+                </div>
+              </div>
+            </details>
+          `;
+        })
+        .join("")}
+      ${rooms.length === 0 ? `<p>マスターが空です。「Aether初期マスターに戻す」で読み込めます。</p>` : ""}
+    </section>
+  `;
+}
+
 // ---- 設定ビュー ----
 
 function renderSettingsView() {
@@ -495,12 +648,7 @@ function renderSettingsView() {
         <label><span>会社名</span><input data-setting="companyName" value="${escapeHtml(s.companyName)}" /></label>
         <label><span>代表者</span><input data-setting="representative" value="${escapeHtml(s.representative)}" /></label>
       </div>
-      <h3 class="est-section-title">データ</h3>
-      <div class="est-data-actions">
-        <button class="secondary-button" data-action="load-master">Aetherサンプル（156明細）を読み込み直す</button>
-        <button class="secondary-button" data-action="clear-all">全明細をクリアして新規見積を作る</button>
-      </div>
-      <p class="est-hint">明細と設定はこのブラウザ（localStorage）に自動保存されます。サンプル読み込みとクリアは現在の明細を置き換えるため、必要ならその前にPDF出力で控えを残してください。</p>
+      <p class="est-hint">この設定は現在編集中の案件に適用されます。案件の追加・複製・削除は「案件一覧」タブ、単価の既定値の管理は「単価マスター」タブで行えます。データはこのブラウザ（localStorage）に自動保存されます。</p>
     </section>
   `;
 }
@@ -534,6 +682,52 @@ function renderPrintBudget() {
   `;
 }
 
+function exportCsv() {
+  const header = ["No", "部屋・工区", "カテゴリ", "工事項目", "数量", "単位", "お客様単価", "お客様手入力金額", "お客様金額", "実行単価", "実行手入力金額", "実行金額", "粗利額", "粗利率", "定価・掛率・人工費", "商品名・品番", "表示", "備考"];
+  const escapeCsv = (value) => {
+    const text = String(value ?? "");
+    return /[",\n]/.test(text) ? `"${text.replaceAll('"', '""')}"` : text;
+  };
+  const lines = [header.map(escapeCsv).join(",")];
+  state.items.forEach((item, index) => {
+    lines.push(
+      [
+        index + 1,
+        item.room,
+        item.category,
+        item.item,
+        item.qty ?? "",
+        item.unit,
+        item.custUnitPrice ?? "",
+        item.custManualAmount ?? "",
+        customerAmount(item),
+        item.execUnitPrice ?? "",
+        item.execManualAmount ?? "",
+        execAmount(item),
+        profitOf(item),
+        `${(marginOf(item) * 100).toFixed(1)}%`,
+        item.priceNote,
+        item.productNote,
+        item.display ? "表示" : "非表示",
+        item.remark,
+      ]
+        .map(escapeCsv)
+        .join(",")
+    );
+  });
+
+  // BOM付きUTF-8にするとExcelで文字化けせずに開ける
+  const blob = new Blob([`\uFEFF${lines.join("\r\n")}`], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `${state.projectName || "見積"}-明細-${new Date().toISOString().slice(0, 10)}.csv`;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+}
+
 function exportPdf() {
   const sheet = document.createElement("div");
   sheet.className = "print-sheet est-print";
@@ -553,17 +747,21 @@ function exportPdf() {
 // ---- 全体レンダリング ----
 
 const VIEWS = [
+  { id: "projects", label: "案件一覧" },
   { id: "input", label: "入力" },
   { id: "quote", label: "お客様見積書" },
   { id: "budget", label: "実行予算" },
   { id: "analysis", label: "粗利分析" },
+  { id: "master", label: "単価マスター" },
   { id: "settings", label: "設定" },
 ];
 
 function renderView() {
+  if (view === "projects") return renderProjectsView();
   if (view === "quote") return renderQuoteView();
   if (view === "budget") return renderBudgetView();
   if (view === "analysis") return renderAnalysisView();
+  if (view === "master") return renderMasterView();
   if (view === "settings") return renderSettingsView();
   return renderInputView();
 }
@@ -575,12 +773,13 @@ function render() {
     <main class="shell est-shell">
       <header class="topbar">
         <div>
-          <p class="eyebrow">ゆずりえクラウド / ${state.items.length} 明細</p>
+          <p class="eyebrow">ゆずりえクラウド / ${escapeHtml(state.projectName)} / ${state.items.length} 明細</p>
           <h1>見積・実行予算システム</h1>
           <p class="lead">一度の入力で、お客様見積書・社内実行予算書・粗利分析に反映されます。</p>
         </div>
         <div class="header-actions">
           <span data-save-state>保存済み</span>
+          <button class="ghost-button" data-action="export-csv">CSV出力</button>
           <button class="ghost-button" data-action="export-pdf">PDF出力</button>
           <a class="ghost-button" href="../">経営伴走アプリへ</a>
         </div>
@@ -611,6 +810,20 @@ function parseNumber(value) {
   return Number.isFinite(n) ? n : null;
 }
 
+function applyMasterDefaults(item, name) {
+  const entry = store.masterItems?.find((m) => m.item && m.item === name.trim());
+  if (!entry) return;
+  if (!item.unit) {
+    item.unit = entry.unit;
+    item.execUnit = entry.unit;
+  }
+  if (item.custUnitPrice === null) item.custUnitPrice = entry.custUnitPrice;
+  if (item.execUnitPrice === null) item.execUnitPrice = entry.execUnitPrice;
+  if (!item.productNote) item.productNote = entry.productNote;
+  if (!item.priceNote) item.priceNote = entry.priceNote;
+  if (entry.category) item.category = entry.category;
+}
+
 function updateItemField(item, field, target) {
   if (field === "display") {
     item.display = target.checked;
@@ -619,6 +832,7 @@ function updateItemField(item, field, target) {
     if (field === "qty" && item.execQty === null) item.execQty = item[field];
   } else {
     item[field] = target.value;
+    if (field === "item") applyMasterDefaults(item, target.value);
   }
   // 実行数量・単位は簡略化のため数量・単位に追従（個別入力は手入力金額で調整）
   if (field === "qty") item.execQty = item[field];
@@ -648,6 +862,20 @@ app.addEventListener("change", (event) => {
     return;
   }
 
+  const masterField = target.dataset.masterField;
+  if (masterField) {
+    const row = target.closest("[data-master-id]");
+    const entry = store.masterItems?.find((item) => item.id === row?.dataset.masterId);
+    if (!entry) return;
+    if (["custUnitPrice", "execUnitPrice"].includes(masterField)) {
+      entry[masterField] = parseNumber(target.value);
+    } else {
+      entry[masterField] = target.value;
+    }
+    scheduleSave();
+    return;
+  }
+
   const field = target.dataset.field;
   if (field) {
     const row = target.closest("[data-item-id]");
@@ -662,8 +890,9 @@ app.addEventListener("change", (event) => {
 app.addEventListener("toggle", (event) => {
   const details = event.target;
   if (!details.matches?.(".est-room")) return;
-  if (details.open) openRooms.add(details.dataset.room);
-  else openRooms.delete(details.dataset.room);
+  const set = details.dataset.scope === "master" ? openMasterRooms : openRooms;
+  if (details.open) set.add(details.dataset.room);
+  else set.delete(details.dataset.room);
 }, true);
 
 app.addEventListener("click", async (event) => {
@@ -725,42 +954,155 @@ app.addEventListener("click", async (event) => {
   }
 
   if (action === "load-master") {
-    if (state.items.length && !confirm("現在の明細をAetherサンプル（156明細）で置き換えます。よろしいですか？")) return;
-    try {
-      applyMaster(await loadMaster());
+    if (!store.masterItems?.length) {
+      alert("単価マスターが空です。単価マスタータブから復元してください。");
+      return;
+    }
+    if (state.items.length && !confirm(`現在の案件の明細を単価マスター（${store.masterItems.length}明細）で置き換えます。よろしいですか？`)) return;
+    state.items = cloneItems(store.masterItems);
+    openRooms.clear();
+    const first = getRooms()[0];
+    if (first) openRooms.add(first);
+    view = "input";
+    persist(true);
+    render();
+  }
+
+  if (action === "export-csv") {
+    exportCsv();
+  }
+
+  if (action === "new-from-master") {
+    const name = prompt("新しい案件名を入力してください", `見積 ${new Date().toLocaleDateString("ja-JP")}`);
+    if (!name?.trim()) return;
+    createProjectFromMaster(name.trim());
+    view = "input";
+    persist(true);
+    render();
+  }
+
+  if (action === "new-empty") {
+    const name = prompt("新しい案件名を入力してください", `見積 ${new Date().toLocaleDateString("ja-JP")}`);
+    if (!name?.trim()) return;
+    addProject(createEmptyProject(name.trim()));
+    view = "input";
+    persist(true);
+    render();
+  }
+
+  if (["open-project", "duplicate-project", "rename-project", "delete-project"].includes(action)) {
+    const card = target.closest("[data-project-id]");
+    const project = store.projects.find((p) => p.id === card?.dataset.projectId);
+    if (!project) return;
+
+    if (action === "open-project") {
+      activateProject(project);
       view = "input";
+      persist(false);
+      render();
+    }
+
+    if (action === "duplicate-project") {
+      const now = new Date().toISOString();
+      const copy = {
+        ...normalizeProject(project),
+        id: crypto.randomUUID(),
+        projectName: `${project.projectName}（複製）`,
+        items: cloneItems(project.items),
+        createdAt: now,
+        updatedAt: now,
+      };
+      addProject(copy);
+      persist(true);
+      render();
+    }
+
+    if (action === "rename-project") {
+      const name = prompt("案件名を入力してください", project.projectName);
+      if (!name?.trim()) return;
+      project.projectName = name.trim();
+      persist(true);
+      render();
+    }
+
+    if (action === "delete-project") {
+      if (!confirm(`案件「${project.projectName}」を削除しますか？この操作は元に戻せません。`)) return;
+      store.projects = store.projects.filter((p) => p !== project);
+      if (project.id === state.id) {
+        if (store.projects.length === 0) addProject(createEmptyProject("新規案件"));
+        else activateProject(store.projects[0]);
+      }
+      persist(true);
+      render();
+    }
+  }
+
+  if (action === "add-master-room") {
+    const name = prompt("単価マスターに追加する工区名を入力してください");
+    if (!name?.trim()) return;
+    store.masterItems ??= [];
+    store.masterItems.push(createItem(name.trim()));
+    openMasterRooms.add(name.trim());
+    persist(true);
+    render();
+  }
+
+  if (action === "add-master-item") {
+    const room = target.dataset.room;
+    const entries = store.masterItems.filter((item) => item.room === room);
+    const last = entries.at(-1);
+    const index = last ? store.masterItems.indexOf(last) + 1 : store.masterItems.length;
+    store.masterItems.splice(index, 0, createItem(room));
+    persist(true);
+    render();
+  }
+
+  if (action === "delete-master-item") {
+    const row = target.closest("[data-master-id]");
+    const entry = store.masterItems?.find((item) => item.id === row?.dataset.masterId);
+    if (!entry) return;
+    if (entry.item.trim() && !confirm(`マスターから「${entry.item}」を削除しますか？`)) return;
+    store.masterItems = store.masterItems.filter((item) => item !== entry);
+    persist(true);
+    render();
+  }
+
+  if (action === "reset-master") {
+    if (!confirm("単価マスターをAether初期マスター（156明細）に戻します。現在のマスターの変更は失われます。よろしいですか？")) return;
+    try {
+      const master = await loadMaster();
+      store.masterItems = master.items.map(normalizeItem);
+      store.masterSettings = master.settings ?? null;
       persist(true);
       render();
     } catch (error) {
       alert(error.message);
     }
   }
-
-  if (action === "clear-all") {
-    if (!confirm("全明細と設定を初期化します。よろしいですか？")) return;
-    state = createEmptyState();
-    openRooms.clear();
-    view = "input";
-    persist(true);
-    render();
-  }
 });
 
 async function boot() {
-  const saved = loadState();
-  if (saved) {
-    state = saved;
-    const first = getRooms()[0];
-    if (first) openRooms.add(first);
-  } else {
-    state = createEmptyState();
+  store = loadStore();
+
+  if (!store.masterItems) {
     try {
-      applyMaster(await loadMaster());
-      persist(false);
+      const master = await loadMaster();
+      store.masterItems = master.items.map(normalizeItem);
+      store.masterSettings = master.settings ?? null;
     } catch {
-      // マスターが読めなくても空の状態で起動する
+      // マスターが読めなくても起動は続ける
     }
   }
+
+  if (store.projects.length === 0) {
+    createProjectFromMaster("リフォーム工事一式");
+  } else {
+    const current = store.projects.find((project) => project.id === store.currentId) ?? store.projects[0];
+    activateProject(current);
+  }
+
+  if (store.projects.length > 1) view = "projects";
+  persist(false);
   render();
 }
 

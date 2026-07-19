@@ -44,8 +44,10 @@ const deepDiveTemplates = [
 const app = document.querySelector("#app");
 
 let questionBank = null;
+let sessionStore = null;
 let state = null;
 let saveTimer = null;
+let showSessionList = false;
 let activeDeepDiveIndex = 0;
 const deepDiveStartedQuestions = new Set();
 let speechRecognition = null;
@@ -102,13 +104,23 @@ function createSession() {
   };
 }
 
-function loadSession() {
+function loadSessionStore() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return createSession();
-    return normalizeSession({ ...createSession(), ...JSON.parse(raw) });
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (Array.isArray(parsed?.sessions)) {
+      return {
+        version: 2,
+        currentId: parsed.currentId ?? null,
+        sessions: parsed.sessions.map((session) => normalizeSession({ ...createSession(), ...session })),
+      };
+    }
+    // 旧形式（1セッションのみ）からの移行
+    const single = normalizeSession({ ...createSession(), ...parsed });
+    return { version: 2, currentId: single.id, sessions: [single] };
   } catch {
-    return createSession();
+    return null;
   }
 }
 
@@ -171,7 +183,7 @@ function setAnswer(questionId, answer) {
 function persistSession(feedback = true) {
   state.updatedAt = new Date().toISOString();
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(sessionStore));
     if (feedback) showSaveState("保存しました");
   } catch {
     showSaveState("この環境では自動保存できません");
@@ -707,7 +719,9 @@ function exportMarkdown() {
   const link = document.createElement("a");
   link.href = url;
   link.download = `strategy-session-${new Date().toISOString().slice(0, 10)}.md`;
+  document.body.appendChild(link);
   link.click();
+  link.remove();
   URL.revokeObjectURL(url);
 }
 
@@ -766,11 +780,30 @@ function exportPdf() {
   window.print();
 }
 
-function resetSession() {
+function activateSession(session) {
   stopVoiceInput();
-  state = createSession();
+  state = session;
+  sessionStore.currentId = session.id;
+  activeDeepDiveIndex = 0;
+  deepDiveStartedQuestions.clear();
+  showSessionList = false;
+}
+
+function startNewSession() {
+  const session = createSession();
+  sessionStore.sessions.unshift(session);
+  activateSession(session);
   persistSession(true);
   render();
+}
+
+function sessionProgress(session) {
+  const questions = getAllQuestions();
+  const answered = questions.filter((question) => {
+    const answer = session.answers?.[question.id];
+    return Boolean(answer && (answer.completed ?? answer.finalSummary ?? answer.answerText));
+  }).length;
+  return { answered, total: questions.length };
 }
 
 function escapeHtml(value) {
@@ -969,7 +1002,57 @@ function renderDeepDivePanel(answer) {
   `;
 }
 
+function renderSessionList() {
+  const sessions = [...sessionStore.sessions].sort((a, b) => (b.updatedAt ?? "").localeCompare(a.updatedAt ?? ""));
+  app.innerHTML = `
+    <main class="shell">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">${SERVICE_NAME} / セッション履歴</p>
+          <h1>セッション一覧</h1>
+          <p class="lead">過去のセッションの閲覧・再開、新しいセッションの開始ができます。</p>
+        </div>
+        <div class="header-actions">
+          <button class="ghost-button" data-action="close-sessions">← 戻る</button>
+        </div>
+      </header>
+      <section class="study-panel session-list">
+        <div class="session-list-actions">
+          <button class="primary-button" data-action="new-session">＋ 新しいセッションを始める</button>
+        </div>
+        ${sessions
+          .map((session) => {
+            const progress = sessionProgress(session);
+            const isCurrent = session.id === state.id;
+            const percent = progress.total ? Math.round((progress.answered / progress.total) * 100) : 0;
+            return `
+              <article class="session-card ${isCurrent ? "is-current" : ""}" data-session-id="${session.id}">
+                <div class="session-card-main">
+                  <strong>${escapeHtml(session.title)}</strong>
+                  <small>${session.status === "completed" ? "完了" : "進行中"}　回答 ${progress.answered}/${progress.total}（${percent}%）　更新 ${new Date(session.updatedAt).toLocaleString("ja-JP")}</small>
+                  <div class="progress session-progress"><i style="width:${percent}%"></i></div>
+                </div>
+                <div class="session-card-actions">
+                  ${isCurrent ? `<span class="mode-badge">編集中</span>` : `<button class="primary-button" data-action="open-session">開く</button>`}
+                  <button class="secondary-button" data-action="rename-session">名称変更</button>
+                  <button class="ghost-button" data-action="delete-session">削除</button>
+                </div>
+              </article>
+            `;
+          })
+          .join("")}
+        <p class="session-hint">セッションはこのブラウザに保存されます。「開く」で続きから再開・閲覧できます。</p>
+      </section>
+    </main>
+  `;
+}
+
 function render() {
+  if (showSessionList) {
+    renderSessionList();
+    return;
+  }
+
   const chapter = getCurrentChapter();
   const question = getCurrentQuestion();
   const answer = getAnswer(question.id);
@@ -993,7 +1076,7 @@ function render() {
           <a class="ghost-button" href="${isTestDistribution ? "../estimate/" : "estimate/"}">見積システム</a>
           <button class="ghost-button" data-action="export-pdf">PDF出力</button>
           <button class="ghost-button" data-action="export">Markdown出力</button>
-          ${isTestDistribution ? "" : `<button class="ghost-button" data-action="reset">リセット</button>`}
+          <button class="ghost-button" data-action="sessions">履歴</button>
         </div>
       </header>
 
@@ -1125,13 +1208,59 @@ app.addEventListener("click", (event) => {
   if (action === "complete-chapter") completeChapter();
   if (action === "export") exportMarkdown();
   if (action === "export-pdf") exportPdf();
-  if (action === "reset") resetSession();
+  if (action === "sessions") {
+    stopVoiceInput();
+    showSessionList = true;
+    render();
+  }
+  if (action === "close-sessions") {
+    showSessionList = false;
+    render();
+  }
+  if (action === "new-session") startNewSession();
+  if (["open-session", "rename-session", "delete-session"].includes(action)) {
+    const card = target.closest("[data-session-id]");
+    const session = sessionStore.sessions.find((item) => item.id === card?.dataset.sessionId);
+    if (!session) return;
+
+    if (action === "open-session") {
+      activateSession(session);
+      persistSession(false);
+      render();
+    }
+
+    if (action === "rename-session") {
+      const title = prompt("セッション名を入力してください", session.title);
+      if (!title?.trim()) return;
+      session.title = title.trim();
+      persistSession(true);
+      render();
+    }
+
+    if (action === "delete-session") {
+      if (!confirm(`セッション「${session.title}」を削除しますか？この操作は元に戻せません。`)) return;
+      sessionStore.sessions = sessionStore.sessions.filter((item) => item !== session);
+      if (session.id === state.id) {
+        if (sessionStore.sessions.length === 0) sessionStore.sessions.push(createSession());
+        activateSession(sessionStore.sessions[0]);
+        showSessionList = true;
+      }
+      persistSession(true);
+      render();
+    }
+  }
 });
 
 async function boot() {
   try {
     questionBank = await loadQuestionBank();
-    state = loadSession();
+    sessionStore = loadSessionStore() ?? { version: 2, currentId: null, sessions: [] };
+    if (sessionStore.sessions.length === 0) {
+      sessionStore.sessions.push(createSession());
+    }
+    const current = sessionStore.sessions.find((session) => session.id === sessionStore.currentId) ?? sessionStore.sessions[0];
+    state = current;
+    sessionStore.currentId = current.id;
     render();
   } catch (error) {
     app.innerHTML = `<main class="shell"><section class="study-panel"><h1>読み込みに失敗しました</h1><p>${escapeHtml(error.message)}</p></section></main>`;

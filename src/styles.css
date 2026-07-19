@@ -601,7 +601,72 @@ h3 {
   color: var(--ink);
 }
 
+.session-list {
+  padding: 16px;
+}
+
+.session-list-actions {
+  margin-bottom: 14px;
+}
+
+.session-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fbfcfe;
+}
+
+.session-card.is-current {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.session-card-main {
+  display: grid;
+  gap: 6px;
+  flex: 1;
+  min-width: 0;
+}
+
+.session-card-main small {
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.session-progress {
+  max-width: 320px;
+  height: 8px;
+  margin-top: 2px;
+}
+
+.session-card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.session-hint {
+  margin: 8px 0 0;
+  color: var(--muted);
+  font-size: 0.88rem;
+}
+
 @media (max-width: 820px) {
+  .session-card {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .session-card-actions {
+    justify-content: flex-start;
+  }
+
   .shell {
     width: min(100% - 20px, 720px);
     padding: 16px 0;
