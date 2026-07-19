@@ -575,7 +575,7 @@ function render() {
     <main class="shell est-shell">
       <header class="topbar">
         <div>
-          <p class="eyebrow">Aether Estimate / ${state.items.length} 明細</p>
+          <p class="eyebrow">ゆずりえクラウド / ${state.items.length} 明細</p>
           <h1>見積・実行予算システム</h1>
           <p class="lead">一度の入力で、お客様見積書・社内実行予算書・粗利分析に反映されます。</p>
         </div>

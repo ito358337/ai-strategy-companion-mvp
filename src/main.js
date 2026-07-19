@@ -1,15 +1,17 @@
 const BASE_STORAGE_KEY = "ai-strategy-companion:mvp-light:session";
-const isTestDistribution = window.location.pathname.startsWith("/test");
+const SERVICE_NAME = "ゆずりえクラウド";
+const isTestDistribution = /\/test\/?($|index\.html$)/.test(window.location.pathname);
 const STORAGE_KEY = isTestDistribution ? `${BASE_STORAGE_KEY}:test-distribution` : BASE_STORAGE_KEY;
 const RECORDING_DB_NAME = "ai-strategy-companion-recordings";
 const RECORDING_STORE_NAME = "voice-recordings";
 const QUESTION_FILES = {
-  strategy: "/src/data/question-bank/strategy.json",
-  tactics: "/src/data/question-bank/tactics.json",
-  promotion: "/src/data/question-bank/promotion.json",
-  experience: "/src/data/question-bank/experience.json",
-  philosophy: "/src/data/question-bank/philosophy.json",
+  strategy: new URL("./data/question-bank/strategy.json", import.meta.url),
+  tactics: new URL("./data/question-bank/tactics.json", import.meta.url),
+  promotion: new URL("./data/question-bank/promotion.json", import.meta.url),
+  experience: new URL("./data/question-bank/experience.json", import.meta.url),
+  philosophy: new URL("./data/question-bank/philosophy.json", import.meta.url),
 };
+const CATEGORIES_URL = new URL("./data/categories.json", import.meta.url);
 
 const deepDiveTemplates = [
   {
@@ -66,7 +68,7 @@ async function loadJson(path) {
 }
 
 async function loadQuestionBank() {
-  const categories = await loadJson("/src/data/categories.json");
+  const categories = await loadJson(CATEGORIES_URL);
   const chapters = await Promise.all(
     categories.map(async (category, index) => ({
       category,
@@ -743,7 +745,7 @@ function renderPrintSheet() {
     </header>
     ${chapterSections}
     ${state.summaries.all ? `<section class="print-chapter"><h2>全体まとめ</h2><p class="print-chapter-summary">${escapeHtml(state.summaries.all)}</p></section>` : ""}
-    <footer class="print-foot">${escapeHtml(questionBank.title)} ${escapeHtml(questionBank.version)}</footer>
+    <footer class="print-foot">${SERVICE_NAME}　${escapeHtml(questionBank.title)} ${escapeHtml(questionBank.version)}</footer>
   `;
 }
 
@@ -981,7 +983,7 @@ function render() {
     <main class="shell">
       <header class="topbar">
         <div>
-          <p class="eyebrow">v0.2 / ${escapeHtml(questionBank.version)} / ${totals.total} questions</p>
+          <p class="eyebrow">${SERVICE_NAME} / v0.2 / ${escapeHtml(questionBank.version)} / ${totals.total} questions</p>
           <h1>${escapeHtml(questionBank.title)}</h1>
           <p class="lead">経営者の想い、強み、課題を一問一答で言語化します。</p>
         </div>
