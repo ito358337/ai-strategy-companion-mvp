@@ -118,6 +118,11 @@ footer{margin-top:80px;border-top:1px solid var(--line);padding-top:18px;font-si
 @media print{
   :root{--paper:#fff;}
   body{font-size:11.5pt;}
+  table{font-size:9.5pt;}
+  th,td{padding:6px 8px;}
+  thead th{white-space:normal;}
+  td.num,th.num{white-space:nowrap;}
+  .chip{white-space:normal;padding:1px 8px;}
   .wrap{max-width:100%;padding:0;}
   section{break-inside:avoid-page;margin-top:40px;}
   .cover{page-break-after:always;padding-top:20mm;}
@@ -140,7 +145,7 @@ footer{margin-top:80px;border-top:1px solid var(--line);padding-top:18px;font-si
   <div class="covermeta">
     <div><b>株式会社Aether（Aether House）</b>岐阜県多治見市大畑町1-27</div>
     <div><b>TEL 0572-22-2650</b>担当：伊藤 秀弥</div>
-    <div><b>2026年7月10日</b>初版（2026/7/8付 概略事業計画を改訂）</div>
+    <div><b>2026年7月10日</b>作成</div>
   </div>
   <div class="confidential">CONFIDENTIAL — 本資料は融資検討・投資検討目的に限りご利用ください</div>
 </header>
@@ -149,14 +154,14 @@ footer{margin-top:80px;border-top:1px solid var(--line);padding-top:18px;font-si
 <section>
   <div class="eyebrow">01</div>
   <h2>エグゼクティブサマリー</h2>
-  <p class="lede">名古屋市中川区万場5丁目の更地約92坪に、供給が希少な「戸建賃貸」3棟を新築し、長期安定運用する計画です。本書は2026年7月8日付の概略事業計画を第三者視点で検証し、<strong>未計上費用の計上・運営経費込みの収支・減価償却の修正</strong>を反映した改訂版です。</p>
+  <p class="lede">名古屋市中川区万場5丁目の更地約92坪に、供給が希少な「戸建賃貸」3棟を新築し、長期安定運用する計画です。空室・運営経費・金利上昇・賃料下落までを織り込んだ保守的な前提で収支を設計し、投資家さま・金融機関さまの検討にそのまま耐える計画としてまとめています。</p>
 
   <div class="kpis">
-    <div class="kpi"><div class="k">総事業費（修正後）</div><div class="v">6,704<small>万円</small></div><div class="s">別途費用279万円を計上</div></div>
+    <div class="kpi"><div class="k">総事業費</div><div class="v">6,704<small>万円</small></div><div class="s">諸費用・予備費まで計上</div></div>
     <div class="kpi"><div class="k">満室時年間賃料</div><div class="v">474<small>万円</small></div><div class="s">月額39.5万円×3戸</div></div>
     <div class="kpi"><div class="k">表面利回り</div><div class="v">7.07<small>%</small></div><div class="s">総事業費ベース</div></div>
     <div class="kpi"><div class="k">NOI利回り</div><div class="v">5.33<small>%</small></div><div class="s">経費・空室5%控除後</div></div>
-    <div class="kpi"><div class="k">DSCR（推奨案）</div><div class="v">1.17<small>倍</small></div><div class="s">自己資金1,000万円・22年</div></div>
+    <div class="kpi"><div class="k">DSCR（推奨案）</div><div class="v">1.17<small>倍</small></div><div class="s">自己資金1,000万円・22年・金利1.5%</div></div>
     <div class="kpi"><div class="k">完済後の資産</div><div class="v">約4,800<small>万円</small></div><div class="s">22年後・無借金の収益資産</div></div>
   </div>
 
@@ -173,7 +178,7 @@ footer{margin-top:80px;border-top:1px solid var(--line);padding-top:18px;font-si
     <tbody>
       <tr><td>資金使途</td><td>土地取得2,100万円＋建築費・諸費用4,604万円（戸建賃貸3棟新築）</td></tr>
       <tr><td>ご融資希望額</td><td class="num"><strong>5,704万円</strong>（自己資金1,000万円投入・推奨シナリオB）</td></tr>
-      <tr><td>希望条件</td><td>期間22年（法定耐用年数内）・変動金利1.5%想定・元利均等</td></tr>
+      <tr><td>希望条件</td><td>期間22年（法定耐用年数内）・変動金利1.5%希望・元利均等（金利2.0%でも事業成立を確認済み・第6章）</td></tr>
       <tr><td>保全</td><td>土地建物に第一順位抵当権設定＋保証会社保証（積算4,236万円・収益還元5,495万円）</td></tr>
     </tbody>
   </table></div>
@@ -231,78 +236,35 @@ footer{margin-top:80px;border-top:1px solid var(--line);padding-top:18px;font-si
 <!-- ================= 4 資金計画 ================= -->
 <section>
   <div class="eyebrow">04</div>
-  <h2>資金計画（修正版）</h2>
-  <p class="lede">元計画の必要資金6,425万円には「別途」とされた費用が9項目残っていました。本改訂版では概算279万円をすべて計上し、<strong>資金ショートの起きない総事業費6,704万円</strong>で計画を組み直しています。</p>
+  <h2>資金計画</h2>
+  <p class="lede">仲介手数料・登記・期中利息・融資費用まで漏れなく計上した<strong>総事業費6,704万円</strong>で計画しています。着工後の資金ショートが起きない「全部入り」の予算です。</p>
 
   <div class="tablewrap"><table>
     <caption>総事業費の内訳（円）</caption>
     <thead><tr><th>項目</th><th class="num">金額</th><th>備考</th></tr></thead>
     <tbody>
       <tr><td>土地取得費</td><td class="num">21,000,000</td><td>売出価格2,100万円</td></tr>
-      <tr><td>土地仲介手数料 <span class="new">＋新規計上</span></td><td class="num">759,000</td><td>（3%＋6万円）×消費税</td></tr>
+      <tr><td>土地仲介手数料</td><td class="num">759,000</td><td>（3%＋6万円）×消費税</td></tr>
       <tr><td>請負工事費（税込）</td><td class="num">39,380,000</td><td>本体33,550,000＋外構2,250,000＋消費税3,580,000</td></tr>
       <tr><td>給排水引込・水道局納金</td><td class="num">2,362,400</td><td>実費精算工事費</td></tr>
       <tr><td>地盤調査・保証（20年）</td><td class="num">350,000</td><td></td></tr>
       <tr><td>地盤改良予算</td><td class="num">1,150,000</td><td>調査後確定・予備費として計上</td></tr>
       <tr><td>印紙代</td><td class="num">10,000</td><td>請負契約書</td></tr>
-      <tr><td>登記費用（移転・表示・保存）<span class="new">＋新規計上</span></td><td class="num">670,000</td><td>登録免許税＋司法書士・土地家屋調査士報酬</td></tr>
-      <tr><td>抵当権設定費用 <span class="new">＋新規計上</span></td><td class="num">360,000</td><td>債権額×0.4%＋報酬</td></tr>
-      <tr><td>期中利息 <span class="new">＋新規計上</span></td><td class="num">400,000</td><td>つなぎ2%・工期5ヶ月想定</td></tr>
-      <tr><td>融資事務手数料・保証料等 <span class="new">＋新規計上</span></td><td class="num">600,000</td><td>金融機関条件により変動</td></tr>
+      <tr><td>登記費用（移転・表示・保存）</td><td class="num">670,000</td><td>登録免許税＋司法書士・土地家屋調査士報酬</td></tr>
+      <tr><td>抵当権設定費用</td><td class="num">360,000</td><td>債権額×0.4%＋報酬</td></tr>
+      <tr><td>期中利息</td><td class="num">400,000</td><td>つなぎ2%・工期5ヶ月想定</td></tr>
+      <tr><td>融資事務手数料・保証料等</td><td class="num">600,000</td><td>金融機関条件により変動</td></tr>
       <tr><td>不動産取得税</td><td class="num">0</td><td>新築賃貸住宅の課税標準控除（1戸1,200万円）適用で実質0円見込み</td></tr>
-      <tr class="total"><td>総事業費</td><td class="num">67,041,400</td><td>元計画64,252,400円＋2,789,000円</td></tr>
+      <tr class="total"><td>総事業費</td><td class="num">67,041,400</td><td>土地・建築・諸費用一式（消費税3,580,000円含む）</td></tr>
     </tbody>
   </table></div>
   <p class="note">火災保険料（水災補償付・5年契約）は初期費用と運営費の二重計上を避けるため、運営費に年10万円で計上しています。地盤改良費は調査結果により最大±100万円程度変動する可能性があります。</p>
 </section>
 
-<!-- ================= 5 シミュレーション検証 ================= -->
-<section>
-  <div class="eyebrow">05</div>
-  <h2>元シミュレーションの検証と修正点</h2>
-  <p class="lede">2026年7月8日付「☆資金計画」シートを検証しました。返済額の計算（月285,893円）は正確でしたが、以下の5点を修正しています。<strong>修正はすべて審査に耐える保守側への修正</strong>です。</p>
-
-  <div class="fix">
-    <div class="t">① 運営経費・空室損が未計上（最重要）</div>
-    <div class="ba">
-      <div class="b"><span class="lab">修正前</span>手取り収入＝賃料39.5万円−返済28.6万円＝10.9万円/月。管理料・固定資産税・空室がゼロの前提。</div>
-      <div><span class="lab">修正後</span>空室5%＋管理料5%＋固都税・保険・修繕等を計上。安定期NOI（営業純利益）<strong>357万円/年</strong>で全計算をやり直し。</div>
-    </div>
-  </div>
-  <div class="fix">
-    <div class="t">② 「実質利回り2.04%」の定義が不適切</div>
-    <div class="ba">
-      <div class="b"><span class="lab">修正前</span>返済後手取り÷総投資額を「実質利回り」と表記。これは自己資金ゼロ時のCF利回りで、金融機関の見る指標と異なる。</div>
-      <div><span class="lab">修正後</span>実質（NOI）利回り＝<strong>5.33%</strong>（NOI 357万円÷総事業費6,704万円）。返済余力はDSCRで別掲。</div>
-    </div>
-  </div>
-  <div class="fix">
-    <div class="t">③ 減価償却の償却率が誤り</div>
-    <div class="ba">
-      <div class="b"><span class="lab">修正前</span>建物39,503,640円×償却率0.038＝年150.1万円（0.038は耐用年数27年の率。脚注の197.5万円=率0.050とも不整合）。</div>
-      <div><span class="lab">修正後</span>木造住宅用の法定耐用年数<strong>22年・償却率0.046</strong>＝<strong>年181.7万円</strong>。節税効果は修正前より年31万円分大きい。※償却基礎額の精査は税理士確認。</div>
-    </div>
-  </div>
-  <div class="fix">
-    <div class="t">④ 別途費用9項目が未計上</div>
-    <div class="ba">
-      <div class="b"><span class="lab">修正前</span>仲介手数料・登記・抵当権設定・期中利息・融資費用等が「別途」のまま総額に不算入。</div>
-      <div><span class="lab">修正後</span>概算279万円を計上し総事業費6,704万円に是正（第4章）。資金使途明細として提出可能。</div>
-    </div>
-  </div>
-  <div class="fix">
-    <div class="t">⑤ 担保評価4,236万円＜必要資金6,425万円 ＝「不可」のまま放置</div>
-    <div class="ba">
-      <div class="b"><span class="lab">修正前</span>積算担保のみで判定し、融資可否欄が「不可」のまま。解決策の提示なし。</div>
-      <div><span class="lab">修正後</span>収益還元評価（5,495万円）の併記＋自己資金1,000万円投入＋保証会社保証の3点で保全を再構成（第7章）。</div>
-    </div>
-  </div>
-</section>
-
 <!-- ================= 6 収支計画 ================= -->
 <section>
-  <div class="eyebrow">06</div>
-  <h2>収支計画（修正版）</h2>
+  <div class="eyebrow">05</div>
+  <h2>収支計画</h2>
   <div class="tablewrap"><table>
     <caption>年間収支の標準モデル（円）</caption>
     <thead><tr><th>項目</th><th class="num">1〜3年目</th><th class="num">4年目以降（安定期）</th><th>前提</th></tr></thead>
@@ -323,33 +285,48 @@ footer{margin-top:80px;border-top:1px solid var(--line);padding-top:18px;font-si
 
 <!-- ================= 7 融資計画 ================= -->
 <section>
-  <div class="eyebrow">07</div>
+  <div class="eyebrow">06</div>
   <h2>融資シナリオと担保・保全</h2>
-  <p class="lede">安定期NOI 357万円に対し、返済条件別のDSCR（元利金返済カバー率）は以下のとおりです。フルローン22年（元計画）はDSCR 1.04と審査基準を満たさないため、<strong>シナリオB（自己資金1,000万円・22年）を推奨案</strong>として申請します。</p>
+  <p class="lede">安定期NOI 357万円に対し、返済条件別のDSCR（元利金返済カバー率）は以下のとおりです。フルローン22年はDSCR 1.04と一般的な審査基準（1.1〜1.2以上）を下回るため、<strong>シナリオB（自己資金1,000万円・22年）を推奨案</strong>として申請します。</p>
 
   <div class="tablewrap"><table>
     <caption>融資シナリオ比較（金利1.5%変動・元利均等／DSCRは安定期NOIベース）</caption>
     <thead><tr><th>シナリオ</th><th class="num">自己資金</th><th class="num">借入額</th><th class="num">期間</th><th class="num">年返済額</th><th class="num">DSCR</th><th class="num">税引前CF/年</th><th>判定</th></tr></thead>
     <tbody>
-      <tr><td>A：フルローン（元計画）</td><td class="num">279万円※</td><td class="num">6,425万円</td><td class="num">22年</td><td class="num">343.1万円</td><td class="num">1.04</td><td class="num">14.1万円</td><td><span class="chip bad">基準未達</span></td></tr>
+      <tr><td>A：フルローン</td><td class="num">279万円※</td><td class="num">6,425万円</td><td class="num">22年</td><td class="num">343.1万円</td><td class="num">1.04</td><td class="num">14.1万円</td><td><span class="chip bad">基準未達</span></td></tr>
       <tr><td><strong>B：自己資金投入（推奨）</strong></td><td class="num">1,000万円</td><td class="num">5,704万円</td><td class="num">22年</td><td class="num">304.6万円</td><td class="num"><strong>1.17</strong></td><td class="num">52.6万円</td><td><span class="chip good">申請基準クリア</span></td></tr>
-      <tr><td>C：フルローン・期間延長</td><td class="num">279万円※</td><td class="num">6,425万円</td><td class="num">30年</td><td class="num">266.1万円</td><td class="num">1.34</td><td class="num">91.1万円</td><td><span class="chip warn">耐用年数超・要劣化対策等級</span></td></tr>
+      <tr><td>C：フルローン・期間延長</td><td class="num">279万円※</td><td class="num">6,425万円</td><td class="num">30年</td><td class="num">266.1万円</td><td class="num">1.34</td><td class="num">91.1万円</td><td><span class="chip warn">要商品条件確認</span></td></tr>
       <tr><td>D：B＋期間延長</td><td class="num">1,000万円</td><td class="num">5,704万円</td><td class="num">30年</td><td class="num">236.2万円</td><td class="num">1.51</td><td class="num">120.9万円</td><td><span class="chip good">最も安全</span></td></tr>
     </tbody>
   </table></div>
   <p class="note">※A・Cの自己資金279万円は別途諸費用相当。30年融資は木造の法定耐用年数22年を超えるため、劣化対策等級2以上の取得等、取扱金融機関の商品条件確認が前提です。1〜3年目は固都税軽減によりDSCRは各シナリオで＋0.04〜0.06上振れします。</p>
 
+  <h3>調達金利の検討</h3>
+  <p>本計画は変動金利1.5%での調達を希望しますが、金融機関・お客様の属性によっては2.0%前後の提示となる可能性があります。推奨シナリオB（借入5,704万円・22年）の金利感応度は以下のとおりで、<strong>金利2.0%でも全期間キャッシュフロー黒字で事業が成立</strong>します。返済原資が尽きる損益分岐金利は約3.1%です。</p>
+  <div class="tablewrap"><table>
+    <caption>金利感応度（シナリオB：借入5,704万円・22年・元利均等／DSCRは安定期NOI 357.2万円ベース）</caption>
+    <thead><tr><th class="num">金利</th><th class="num">月返済額</th><th class="num">年返済額</th><th class="num">DSCR（安定期）</th><th class="num">DSCR（1〜3年目）</th><th class="num">税引前CF/年</th><th>所見</th></tr></thead>
+    <tbody>
+      <tr><td class="num">1.5%（希望）</td><td class="num">253,808円</td><td class="num">304.6万円</td><td class="num"><strong>1.17</strong></td><td class="num">1.22</td><td class="num">＋52.6万円</td><td><span class="chip good">申請基準クリア</span></td></tr>
+      <tr><td class="num">1.75%</td><td class="num">260,476円</td><td class="num">312.6万円</td><td class="num">1.14</td><td class="num">1.19</td><td class="num">＋44.6万円</td><td><span class="chip good">成立</span></td></tr>
+      <tr><td class="num">2.0%</td><td class="num">267,252円</td><td class="num">320.7万円</td><td class="num">1.11</td><td class="num">1.16</td><td class="num">＋36.5万円</td><td><span class="chip good">成立</span></td></tr>
+      <tr><td class="num">2.5%</td><td class="num">281,123円</td><td class="num">337.3万円</td><td class="num">1.06</td><td class="num">1.10</td><td class="num">＋19.8万円</td><td><span class="chip warn">黒字だが余裕薄</span></td></tr>
+      <tr><td class="num">3.0%</td><td class="num">295,415円</td><td class="num">354.5万円</td><td class="num">1.01</td><td class="num">1.05</td><td class="num">＋2.7万円</td><td><span class="chip warn">分岐点≒3.1%</span></td></tr>
+    </tbody>
+  </table></div>
+  <p class="note">金利2.0%提示の場合でも、期間を30年にできればDSCRは1.41（シナリオD相当）まで改善します。提示条件が2.0%を超える場合は、自己資金の積み増し・期間延長・金融機関の再選定を含めて資金計画を再協議します。</p>
+
   <h3>担保評価と保全の考え方</h3>
   <div class="tablewrap"><table>
     <thead><tr><th>評価手法</th><th class="num">評価額</th><th>算定根拠</th></tr></thead>
     <tbody>
-      <tr><td>積算評価（元シートどおり）</td><td class="num">4,236万円</td><td>土地：路線価5.3万円/㎡×304.12㎡×80%＝1,289万円／建物：4,209万円×70%＝2,946万円</td></tr>
+      <tr><td>積算評価</td><td class="num">4,236万円</td><td>土地：路線価5.3万円/㎡×304.12㎡×80%＝1,289万円／建物：4,209万円×70%＝2,946万円</td></tr>
       <tr><td>収益還元評価</td><td class="num"><strong>5,495万円</strong></td><td>安定期NOI 357.2万円÷還元利回り6.5%（6.0%なら5,953万円・7.0%なら5,103万円）</td></tr>
       <tr><td>土地の実勢参考値</td><td class="num">2,100万円</td><td>本件取引価格。路線価評価1,289万円は実勢の約6割と保守的</td></tr>
     </tbody>
   </table></div>
   <ul>
-    <li>推奨シナリオBの借入5,704万円に対し、<strong>対収益還元LTVは104%、自己資金投入後の実質保全不足は約200万円</strong>まで圧縮。保証会社保証（元計画に保証料計上済み）を併用します。</li>
+    <li>推奨シナリオBの借入5,704万円に対し、<strong>対収益還元LTVは104%、自己資金投入後の実質保全不足は約200万円</strong>まで圧縮。保証会社保証（保証料は総事業費に計上済み）を併用します。</li>
     <li>完成建物は省令準耐火・地盤保証20年・住宅瑕疵担保責任保険付きで、担保物件としての品質を確保します。</li>
     <li>事業主の属性資料（資産背景・確定申告書・自己資金エビデンス）は面談時にご提出します。</li>
   </ul>
@@ -357,7 +334,7 @@ footer{margin-top:80px;border-top:1px solid var(--line);padding-top:18px;font-si
 
 <!-- ================= 8 ストレステスト ================= -->
 <section>
-  <div class="eyebrow">08</div>
+  <div class="eyebrow">07</div>
   <h2>ストレステスト</h2>
   <p class="lede">推奨シナリオB（自己資金1,000万円・22年）と参考シナリオC（フルローン30年）について、賃料・空室・金利の下振れ耐性を検証しました。</p>
   <div class="tablewrap"><table>
@@ -379,7 +356,7 @@ footer{margin-top:80px;border-top:1px solid var(--line);padding-top:18px;font-si
 
 <!-- ================= 9 長期キャッシュフロー ================= -->
 <section>
-  <div class="eyebrow">09</div>
+  <div class="eyebrow">08</div>
   <h2>長期キャッシュフローと資産形成</h2>
   <p class="lede">保守的前提（賃料下落 年0.5%・空室5%・15年目と25年目に大規模修繕300万円）でも、22年で無借金の収益資産が完成します。以下は推奨シナリオBの30年推移です。</p>
 
@@ -418,7 +395,7 @@ footer{margin-top:80px;border-top:1px solid var(--line);padding-top:18px;font-si
 
 <!-- ================= 10 リスク ================= -->
 <section>
-  <div class="eyebrow">10</div>
+  <div class="eyebrow">09</div>
   <h2>リスクの開示と対応策</h2>
   <div class="tablewrap"><table>
     <thead><tr><th style="width:16em">リスク</th><th>対応策</th></tr></thead>
@@ -436,7 +413,7 @@ footer{margin-top:80px;border-top:1px solid var(--line);padding-top:18px;font-si
 
 <!-- ================= 11 出口戦略 ================= -->
 <section>
-  <div class="eyebrow">11</div>
+  <div class="eyebrow">10</div>
   <h2>出口戦略 — 3つの選択肢</h2>
   <div class="qa"><div class="q">① 長期保有（基本方針）</div><div class="a">22年で完済し、以後は年約300万円のNOIを生む無借金資産として保有。相続・資産管理法人への移転にも適した規模です。</div></div>
   <div class="qa"><div class="q">② 分割売却</div><div class="a">3棟を個別に登記・売却が可能。実需（マイホーム購入層）へ1棟ずつ売却でき、一棟収益物件より買い手層が厚く流動性に優れます。市況の良いタイミングで一部のみ売却する選択も可能。</div></div>
@@ -445,9 +422,9 @@ footer{margin-top:80px;border-top:1px solid var(--line);padding-top:18px;font-si
 
 <!-- ================= 12 まとめ ================= -->
 <section>
-  <div class="eyebrow">12</div>
+  <div class="eyebrow">11</div>
   <h2>まとめとお願い</h2>
-  <p>本計画は、希少性の高い戸建賃貸3棟を総事業費6,704万円で取得・建築し、NOI利回り5.33%・DSCR 1.17（推奨案）で長期運用するものです。元計画から費用・経費・税務の甘さをすべて是正したうえで、なお<strong>全ストレスケースで返済原資が確保される</strong>ことを確認しました。</p>
+  <p>本計画は、希少性の高い戸建賃貸3棟を総事業費6,704万円で取得・建築し、NOI利回り5.33%・DSCR 1.17（推奨案）で長期運用するものです。費用・経費・税務まで含めた保守的な前提のもとで、<strong>単独ストレスの全ケースで返済原資が確保される</strong>ことを確認しています。</p>
   <ul>
     <li><strong>投資家さまへ</strong> — 自己資金1,000万円で、22年後に無借金の収益資産（約4,800万円相当）と年300万円のインカムを形成する計画です。中間売却の出口も2系統（分割・一括）確保しています。</li>
     <li><strong>金融機関さまへ</strong> — ご融資希望額5,704万円・期間22年。積算に加え収益還元評価・保証会社保証・自己資金投入で保全を構成し、DSCR 1.17（軽減期1.22）を確保しています。属性資料一式は面談時にご提出します。</li>
