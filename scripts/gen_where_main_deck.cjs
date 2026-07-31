@@ -240,24 +240,38 @@ s.addText('値下げではない。現行プランが価格的に届かない小
 
 /* ---------- 10 UNIT ECONOMICS ---------- */
 s = pres.addSlide();
-head(s, 'UNIT ECONOMICS', '新築1件で、WHEREに75万〜125万円の成果収益', 10);
-card(s, M, 1.66, 3.5, 1.5, NAVY);
-s.addText('前提｜新築建物価格の仮定', { x: M + 0.3, y: 1.86, w: 2.9, h: 0.3, fontSize: 11, color: ICE, fontFace: JP, margin: 0 });
-s.addText('2,500万円', { x: M + 0.3, y: 2.2, w: 2.9, h: 0.6, fontSize: 28, bold: true, color: WHITE, fontFace: JP, margin: 0 });
-const rates = [['3％', '75万円'], ['4％', '100万円'], ['5％', '125万円']];
-const rw = (CW - 3.5 - 0.34 - 0.28 * 2) / 3;
-rates.forEach((r, i) => {
-  const x = M + 3.5 + 0.34 + i * (rw + 0.28);
-  card(s, x, 1.66, rw, 1.5, i === 2 ? 'FCF3E3' : CARD);
-  s.addText(r[0], { x, y: 1.84, w: rw, h: 0.34, fontSize: 14, bold: true, color: AMBER, align: 'center', fontFace: JP, margin: 0 });
-  s.addText(r[1], { x, y: 2.24, w: rw, h: 0.6, fontSize: 26, bold: true, color: NAVY, align: 'center', fontFace: JP, margin: 0 });
+head(s, 'UNIT ECONOMICS', '1件あたり15万〜125万円。工事規模に応じて収益が積み上がる', 10);
+const lblW = 4.3, rgap = 0.24, rw = (CW - lblW - rgap * 3) / 3;
+const rateX = i => M + lblW + rgap + i * (rw + rgap);
+// ヘッダー行
+s.addShape(pres.ShapeType.roundRect, { x: M, y: 1.6, w: lblW, h: 0.42, rectRadius: 0.08, fill: { color: NAVY } });
+s.addText('工事区分（1件あたり・仮定）', { x: M + 0.24, y: 1.6, w: lblW - 0.48, h: 0.42, fontSize: 11.5, bold: true, color: WHITE, valign: 'middle', fontFace: JP, margin: 0 });
+['成果報酬 3％', '成果報酬 4％', '成果報酬 5％'].forEach((t, i) => {
+  s.addShape(pres.ShapeType.roundRect, { x: rateX(i), y: 1.6, w: rw, h: 0.42, rectRadius: 0.08, fill: { color: i === 2 ? AMBER : '4A5A7A' } });
+  s.addText(t, { x: rateX(i), y: 1.6, w: rw, h: 0.42, fontSize: 11.5, bold: true, color: WHITE, align: 'center', valign: 'middle', fontFace: JP, margin: 0 });
 });
-card(s, M, 3.42, CW, 1.4);
-s.addText([{ text: '現行プランの初年度固定費 435万円　＝　', options: { fontSize: 15, color: TEXT } }, { text: '成果報酬5％なら新築4件', options: { fontSize: 17, bold: true, color: NAVY } }, { text: '　／　3％なら6件程度の成約に相当', options: { fontSize: 15, color: TEXT } }], { x: M + 0.42, y: 3.66, w: CW - 0.84, h: 0.44, fontFace: JP, margin: 0 });
-s.addText('空き家はすべてが再生に向くわけではない。状態・立地・オーナーの希望によっては、解体して新築へ建て替える可能性がある。', { x: M + 0.42, y: 4.16, w: CW - 0.84, h: 0.42, fontSize: 11.5, color: MUTED, fontFace: JP, margin: 0 });
-card(s, M, 5.0, CW, 1.24, NAVY);
-s.addText('収益機会は新築だけではない。小修繕（数十万円）→ 再生・改修（数百万円）→ 解体 → 建て替え新築（2,500万円規模）まで、階段状に生まれる。', { x: M + 0.42, y: 5.28, w: CW - 0.84, h: 0.7, fontSize: 13, color: WHITE, lineSpacing: 21, fontFace: JP, margin: 0 });
-s.addText('計算：2,500万円 × 3〜5％。建物価格2,500万円は本企画の［仮定］。', { x: M, y: 6.42, w: CW, h: 0.3, fontSize: 9.5, color: MUTED, fontFace: JP, margin: 0 });
+// 2つのケース
+const cases = [
+  ['再生・改修工事', '工事金額 500万円', ['15万円', '20万円', '25万円'], CARD, 22],
+  ['解体・建て替え新築', '建物価格 2,500万円', ['75万円', '100万円', '125万円'], 'FCF3E3', 26],
+];
+cases.forEach((c, r) => {
+  const y = 2.14 + r * 0.98;
+  card(s, M, y, lblW, 0.86, c[3]);
+  s.addText(c[0], { x: M + 0.26, y: y + 0.1, w: lblW - 0.52, h: 0.34, fontSize: 14, bold: true, color: NAVY, fontFace: JP, margin: 0 });
+  s.addText(c[1], { x: M + 0.26, y: y + 0.46, w: lblW - 0.52, h: 0.3, fontSize: 11.5, color: MUTED, fontFace: JP, margin: 0 });
+  c[2].forEach((v, i) => {
+    card(s, rateX(i), y, rw, 0.86, r === 1 && i === 2 ? 'FCF3E3' : WHITE);
+    s.addText(v, { x: rateX(i), y, w: rw, h: 0.86, fontSize: c[4], bold: true, color: r === 1 ? NAVY : '4A5A7A', align: 'center', valign: 'middle', fontFace: JP, margin: 0 });
+  });
+});
+// 固定費との比較
+card(s, M, 4.16, CW, 1.16);
+s.addText([{ text: '現行プランの初年度固定費 435万円　＝　', options: { fontSize: 14.5, color: TEXT } }, { text: '成果報酬5％なら新築4件', options: { fontSize: 16.5, bold: true, color: NAVY } }, { text: '　／　3％なら6件程度の成約に相当', options: { fontSize: 14.5, color: TEXT } }], { x: M + 0.42, y: 4.34, w: CW - 0.84, h: 0.4, fontFace: JP, margin: 0 });
+s.addText('空き家はすべてが再生に向くわけではない。状態・立地・オーナーの希望によっては、解体して新築へ建て替える可能性がある。', { x: M + 0.42, y: 4.78, w: CW - 0.84, h: 0.4, fontSize: 11.5, color: MUTED, fontFace: JP, margin: 0 });
+card(s, M, 5.48, CW, 1.16, NAVY);
+s.addText('収益機会は新築だけではない。小修繕（数十万円）→ 再生・改修（数百万円）→ 解体 → 建て替え新築（2,500万円規模）まで、管理から生まれる工事すべてが階段状に成果報酬の対象になる。', { x: M + 0.42, y: 5.62, w: CW - 0.84, h: 0.9, fontSize: 12.5, color: WHITE, valign: 'middle', lineSpacing: 20, fontFace: JP, margin: 0 });
+s.addText('計算：工事金額 × 3〜5％。再生工事500万円、新築の建物価格2,500万円はいずれも本企画の［仮定］。', { x: M, y: 6.72, w: CW, h: 0.3, fontSize: 9.5, color: MUTED, fontFace: JP, margin: 0 });
 
 /* ---------- 11 SCALE MODEL ---------- */
 s = pres.addSlide();
